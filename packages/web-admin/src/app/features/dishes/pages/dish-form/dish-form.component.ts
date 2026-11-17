@@ -1,8 +1,9 @@
-import { Component, inject, OnInit, signal } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Router, RouterLink } from '@angular/router'
 import { LucideAngularModule } from 'lucide-angular'
-import { firstValueFrom } from 'rxjs'
+import { combineLatest, firstValueFrom, of } from 'rxjs'
 import { DishStore } from '../../store/dish.store'
 import { DishService } from '../../services/dish.service'
 import { IngredientStore } from '../../../ingredients/store/ingredient.store'
@@ -21,6 +22,7 @@ export class DishFormComponent implements OnInit {
   readonly ingredientStore = inject(IngredientStore)
   private readonly route = inject(ActivatedRoute)
   private readonly router = inject(Router)
+  private readonly destroyRef = inject(DestroyRef)
 
   isEditing = false
   dishId: string | null = null
@@ -30,13 +32,17 @@ export class DishFormComponent implements OnInit {
 
   categories: DishCategory[] = ['entrante', 'principal', 'postre', 'bebida']
 
-  form: CreateDishDto = {
-    name: '',
-    description: null,
-    price: 0,
-    category: 'principal',
-    available: true,
-    ingredients: []
+  form: CreateDishDto = this.emptyForm()
+
+  private emptyForm(): CreateDishDto {
+    return {
+      name: '',
+      description: null,
+      price: 0,
+      category: 'principal',
+      available: true,
+      ingredients: []
+    }
   }
 
   newIngredientId = ''
@@ -61,18 +67,30 @@ export class DishFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.restaurantId = this.route.parent?.snapshot.params['restaurantId'] ?? ''
-    const id = this.route.snapshot.paramMap.get('id')
+    // El componente se reutiliza al cambiar de restaurante o de plato, por eso
+    // escuchamos los cambios de parámetros y reiniciamos el estado.
+    combineLatest([this.route.parent?.paramMap ?? of(null), this.route.paramMap])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(([parentParams, params]) => {
+        const restaurantId = parentParams?.get('restaurantId') ?? ''
+        const id = params.get('id')
 
-    if (this.restaurantId) {
-      this.ingredientStore.loadByRestaurant(this.restaurantId)
-    }
+        if (restaurantId && restaurantId !== this.restaurantId) {
+          this.ingredientStore.loadByRestaurant(restaurantId)
+        }
+        this.restaurantId = restaurantId
 
-    if (id && this.restaurantId) {
-      this.isEditing = true
-      this.dishId = id
-      this.loadDish()
-    }
+        this.form = this.emptyForm()
+        this.newIngredientId = ''
+        this.newIngredientQty = 1
+        this.error.set(null)
+        this.isEditing = !!(id && this.restaurantId)
+        this.dishId = this.isEditing ? id : null
+
+        if (this.isEditing) {
+          this.loadDish()
+        }
+      })
   }
 
   private async loadDish(): Promise<void> {

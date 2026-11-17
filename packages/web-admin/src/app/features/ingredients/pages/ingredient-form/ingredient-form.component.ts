@@ -1,8 +1,9 @@
-import { Component, inject, OnInit, signal } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Router, RouterLink } from '@angular/router'
 import { LucideAngularModule } from 'lucide-angular'
-import { firstValueFrom } from 'rxjs'
+import { combineLatest, firstValueFrom, of } from 'rxjs'
 import { IngredientStore } from '../../store/ingredient.store'
 import { IngredientService } from '../../services/ingredient.service'
 import type { CreateIngredientDto, IngredientUnit } from '../../models/ingredient.model'
@@ -19,6 +20,7 @@ export class IngredientFormComponent implements OnInit {
   private readonly service = inject(IngredientService)
   private readonly route = inject(ActivatedRoute)
   private readonly router = inject(Router)
+  private readonly destroyRef = inject(DestroyRef)
 
   isEditing = false
   ingredientId: string | null = null
@@ -28,10 +30,10 @@ export class IngredientFormComponent implements OnInit {
 
   units: IngredientUnit[] = ['kg', 'g', 'l', 'ml', 'unidad']
 
-  form: CreateIngredientDto = {
-    name: '',
-    unit: 'kg',
-    currentStock: 0
+  form: CreateIngredientDto = this.emptyForm()
+
+  private emptyForm(): CreateIngredientDto {
+    return { name: '', unit: 'kg', currentStock: 0 }
   }
 
   get pageTitle(): string {
@@ -43,14 +45,23 @@ export class IngredientFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.restaurantId = this.route.parent?.snapshot.params['restaurantId'] ?? ''
-    const id = this.route.snapshot.paramMap.get('id')
+    // El componente se reutiliza al cambiar de restaurante o de ingrediente, por
+    // eso escuchamos los cambios de parámetros y reiniciamos el estado.
+    combineLatest([this.route.parent?.paramMap ?? of(null), this.route.paramMap])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(([parentParams, params]) => {
+        this.restaurantId = parentParams?.get('restaurantId') ?? ''
+        const id = params.get('id')
 
-    if (id && this.restaurantId) {
-      this.isEditing = true
-      this.ingredientId = id
-      this.loadIngredient()
-    }
+        this.form = this.emptyForm()
+        this.error.set(null)
+        this.isEditing = !!(id && this.restaurantId)
+        this.ingredientId = this.isEditing ? id : null
+
+        if (this.isEditing) {
+          this.loadIngredient()
+        }
+      })
   }
 
   private async loadIngredient(): Promise<void> {

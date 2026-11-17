@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Router, RouterLink } from '@angular/router'
 import { LucideAngularModule } from 'lucide-angular'
@@ -16,6 +17,7 @@ export class EmployeeFormComponent implements OnInit {
   private readonly store = inject(EmployeeStore)
   private readonly route = inject(ActivatedRoute)
   private readonly router = inject(Router)
+  private readonly destroyRef = inject(DestroyRef)
 
   loading = signal(false)
   error = signal<string | null>(null)
@@ -37,8 +39,14 @@ export class EmployeeFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.restaurantId = this.route.parent?.snapshot.params['restaurantId'] ?? ''
-    this.form.restaurantId = this.restaurantId || null
+    // El componente se reutiliza al cambiar de restaurante, por eso escuchamos
+    // los cambios de parámetros en lugar de leer el snapshot una sola vez.
+    this.route.parent?.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        this.restaurantId = params.get('restaurantId') ?? ''
+        this.form.restaurantId = this.restaurantId || null
+      })
   }
 
   async onSubmit(): Promise<void> {
