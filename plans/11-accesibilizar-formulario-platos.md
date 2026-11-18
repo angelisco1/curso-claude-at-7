@@ -110,7 +110,7 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 - [x] **Tarea 14: Foco visible en web-admin**
   - Tests (E2E): `e2e/focus-visible.spec.ts` monta un HTML mínimo con `page.setContent` (un `button`, un `a`, un `.btn` y un `.form-control`), inyecta `packages/web-admin/src/styles.css` con `page.addStyleTag({ path })`, recorre con Tab y comprueba que el `outline-style` calculado del elemento activo no es `none` (rojo).
   - Código: regla `:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px }` para `button`, `a`, `.btn` y `.form-control`, quitando los `outline: none` que lo impiden. Verificar que el contraste del color de foco con el fondo es ≥ 3:1.
-- [ ] **Tarea 15: Foco visible en web-empleados, web-clientes y web-shared**
+- [x] **Tarea 15: Foco visible en web-empleados, web-clientes y web-shared**
   - Tests (E2E): parametrizar el spec anterior para los `styles.css` de `web-empleados` y `web-clientes` y para `web-shared/src/lib/styles/base.css` (rojo en los tres).
   - Código: aplicar la misma regla en los tres ficheros.
 

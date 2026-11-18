@@ -2,7 +2,10 @@ import { test, expect } from '@playwright/test'
 import path from 'node:path'
 
 const hojas_de_estilo = [
-  { nombre: 'web-admin', ruta: '../src/styles.css' }
+  { nombre: 'web-admin', ruta: '../src/styles.css' },
+  { nombre: 'web-empleados', ruta: '../../web-empleados/src/styles.css' },
+  { nombre: 'web-clientes', ruta: '../../web-clientes/src/styles.css' },
+  { nombre: 'web-shared', ruta: '../../web-shared/src/lib/styles/base.css' }
 ]
 
 const html_minimo = `
