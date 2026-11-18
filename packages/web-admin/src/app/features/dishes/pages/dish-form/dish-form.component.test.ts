@@ -74,4 +74,19 @@ describe('DishFormComponent', () => {
       expect(label).not.toBeNull()
     })
   })
+
+  describe('sección de ingredientes', () => {
+    it('agrupa los controles en un fieldset con legend', () => {
+      const { fixture } = configurar()
+      const legend = fixture.nativeElement.querySelector('fieldset > legend')
+      expect(legend?.textContent?.trim()).toBe('Ingredientes del plato')
+    })
+
+    it.each(['newIngredientId', 'newIngredientQty'])('el control %s tiene un label asociado', campo => {
+      const { fixture } = configurar()
+      const control = fixture.nativeElement.querySelector(`[name="${campo}"]`) as HTMLElement
+      expect(control.id).toBeTruthy()
+      expect(fixture.nativeElement.querySelector(`label[for="${control.id}"]`)).not.toBeNull()
+    })
+  })
 })

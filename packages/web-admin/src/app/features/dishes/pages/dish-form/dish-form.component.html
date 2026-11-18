@@ -47,8 +47,8 @@
       </div>
     </div>
 
-    <div class="ingredients-section">
-      <div class="fake-subtitle">Ingredientes del plato</div>
+    <fieldset class="ingredients-section">
+      <legend class="section-legend">Ingredientes del plato</legend>
 
       @if (form.ingredients.length > 0) {
         <div class="ingredient-chips">
@@ -64,18 +64,20 @@
       }
 
       <div class="add-ingredient-row">
-        <select class="form-control" [(ngModel)]="newIngredientId" name="newIngredientId">
+        <label for="dish-new-ingredient" class="sr-only">Ingrediente</label>
+        <select id="dish-new-ingredient" class="form-control" [(ngModel)]="newIngredientId" name="newIngredientId">
           <option value="">Seleccionar ingrediente</option>
           @for (i of ingredientStore.ingredients(); track i.id) {
             <option [value]="i.id">{{ i.name }} ({{ i.unit }})</option>
           }
         </select>
-        <input type="number" class="form-control qty-input" [(ngModel)]="newIngredientQty" name="newIngredientQty" placeholder="Cant." />
+        <label for="dish-new-quantity" class="sr-only">Cantidad</label>
+        <input id="dish-new-quantity" type="number" class="form-control qty-input" [(ngModel)]="newIngredientQty" name="newIngredientQty" placeholder="Cant." />
         <div class="btn btn-secondary btn-sm" (click)="addIngredient()">
           <lucide-icon name="plus" [size]="14"></lucide-icon>
         </div>
       </div>
-    </div>
+    </fieldset>
 
     <div class="form-actions">
       <div class="btn btn-secondary" [routerLink]="listUrl">Cancelar</div>

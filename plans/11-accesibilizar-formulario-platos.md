@@ -77,7 +77,7 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 - [x] **Tarea 5: Título como encabezado y etiquetas asociadas a los campos principales**
   - Tests (unitario): el componente renderiza un `h1` con "Nuevo plato" (y "Editar plato" con `id`). Para nombre, precio, categoría, disponible y descripción existe un `label[for]` cuyo `for` coincide con el `id` del control (rojo).
   - Código: cambiar `fake-title` por `<h1>` y los `fake-label` por `<label for="dish-…">` con `id` en cada control. Ajustar el CSS para mantener el aspecto.
-- [ ] **Tarea 6: Agrupación y etiquetas de la sección de ingredientes**
+- [x] **Tarea 6: Agrupación y etiquetas de la sección de ingredientes**
   - Tests (unitario): existe un `fieldset` con `legend` "Ingredientes del plato". El select de ingrediente y el input de cantidad tienen un `label` asociado (rojo).
   - Código: `<fieldset>` + `<legend>` y etiquetas (visualmente ocultas con `.sr-only` si hace falta). Añadir la utilidad `.sr-only` a `styles.css`.
 - [ ] **Tarea 7: Botón nativo para añadir ingrediente con errores por campo**
