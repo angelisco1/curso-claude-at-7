@@ -21,3 +21,22 @@ export function validate_dish_form(form: DishFormValidable): DishFormErrors {
   }
   return errors
 }
+
+export type NewIngredientErrors = Partial<Record<'ingredient' | 'quantity', string>>
+
+export function validate_new_ingredient(
+  ingredientId: string,
+  quantity: number | null,
+  current: DishIngredient[]
+): NewIngredientErrors {
+  const errors: NewIngredientErrors = {}
+  if (!ingredientId) {
+    errors.ingredient = 'Selecciona un ingrediente'
+  } else if (current.some(i => i.ingredientId === ingredientId)) {
+    errors.ingredient = 'El ingrediente ya está en el plato'
+  }
+  if (quantity === null || quantity === undefined || !(quantity > 0)) {
+    errors.quantity = 'La cantidad debe ser mayor que 0'
+  }
+  return errors
+}
