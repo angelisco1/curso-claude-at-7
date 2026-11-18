@@ -31,3 +31,24 @@ test('añade un ingrediente y envía el formulario solo con el teclado', async (
   await expect(page).toHaveURL(/\/restaurants\/rest-1\/dishes$/)
   await expect(page.getByText(nombre)).toBeVisible()
 })
+
+test('el orden de tabulación coincide con el orden visual', async ({ page }) => {
+  await login_as_admin(page)
+  await page.goto('/restaurants/rest-1/dishes/new')
+  await expect(page.locator('#dish-new-ingredient option')).not.toHaveCount(1)
+  await page.getByRole('link', { name: 'Volver al listado de platos' }).focus()
+
+  const esperado = [
+    'dish-name', 'dish-price', 'dish-category', 'dish-available', 'dish-description',
+    'dish-new-ingredient', 'dish-new-quantity', 'Añadir ingrediente', 'Cancelar', 'Guardar'
+  ]
+  const recorrido: string[] = []
+  for (let i = 0; i < esperado.length; i++) {
+    await page.keyboard.press('Tab')
+    recorrido.push(await page.evaluate(() => {
+      const el = document.activeElement as HTMLElement
+      return el.id || el.getAttribute('aria-label') || el.textContent?.trim() || el.tagName
+    }))
+  }
+  expect(recorrido).toEqual(esperado)
+})

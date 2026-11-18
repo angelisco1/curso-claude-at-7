@@ -119,7 +119,7 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 - [x] **Tarea 16: Flujo de ingredientes y envío con teclado**
   - Tests (E2E): con el teclado, Tab hasta el select de ingrediente, flechas para elegir, Tab a la cantidad, Tab y Espacio en "Añadir ingrediente": aparece el ingrediente. Después, rellenando nombre "Plato E2E <timestamp>" y precio (con el ingrediente ya añadido), Enter en el nombre envía y el plato aparece en el listado. Debe pasar con lo implementado; si falla, corregir.
   - Código: correcciones que salgan del test.
-- [ ] **Tarea 17: Orden de tabulación lógico**
+- [x] **Tarea 17: Orden de tabulación lógico**
   - Tests (E2E): desde el enlace "volver", con Tab el foco recorre en este orden: volver → nombre → precio → categoría → disponible → descripción → ingrediente → cantidad → añadir → Cancelar → Guardar.
   - Código: corregir el orden del DOM si hace falta (sin `tabindex` positivos).
 - [ ] **Tarea 18: Chequeo automático WCAG 2.2 AA con axe**
