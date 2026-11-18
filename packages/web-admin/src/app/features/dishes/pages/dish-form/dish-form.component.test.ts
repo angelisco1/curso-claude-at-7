@@ -8,9 +8,9 @@ import { DishStore } from '../../store/dish.store'
 import { DishService } from '../../services/dish.service'
 import { IngredientStore } from '../../../ingredients/store/ingredient.store'
 
-function configurar(params: Record<string, string> = {}) {
+function configurar(params: Record<string, string> = {}, plato?: unknown) {
   const store = { create: vi.fn().mockResolvedValue(undefined), update: vi.fn().mockResolvedValue(undefined) }
-  const service = { getById: vi.fn() }
+  const service = { getById: vi.fn().mockReturnValue(plato ? of(plato) : of(undefined)) }
   const ingredientStore = {
     ingredients: signal([
       { id: 'ing-1', name: 'Tomate', unit: 'kg' },
@@ -344,6 +344,42 @@ describe('DishFormComponent', () => {
       const alerta = el.querySelector('.alert-error')
       expect(alerta?.getAttribute('role')).toBe('alert')
       expect(alerta?.textContent).toContain('Fallo de la API')
+    })
+  })
+
+  describe('modo edición', () => {
+    const plato = {
+      id: 'dish-1', name: 'Paella', description: 'Con marisco', price: 12.5, category: 'principal',
+      available: false, restaurantId: 'rest-1', createdAt: '', updatedAt: '',
+      ingredients: [{ ingredientId: 'ing-1', quantity: 2 }]
+    }
+
+    async function editar() {
+      const ctx = configurar({ id: 'dish-1' }, plato)
+      await ctx.fixture.whenStable()
+      ctx.fixture.detectChanges()
+      await ctx.fixture.whenStable()
+      return ctx
+    }
+
+    it('rellena los campos con el plato cargado', async () => {
+      const { fixture, service } = await editar()
+      expect(service.getById).toHaveBeenCalledWith('rest-1', 'dish-1')
+      const el = fixture.nativeElement as HTMLElement
+      expect((el.querySelector('#dish-name') as HTMLInputElement).value).toBe('Paella')
+      expect((el.querySelector('#dish-price') as HTMLInputElement).value).toBe('12.5')
+      expect((el.querySelector('#dish-description') as HTMLTextAreaElement).value).toBe('Con marisco')
+      expect(el.querySelectorAll('ul li').length).toBe(1)
+    })
+
+    it('al enviar llama a store.update y no a store.create', async () => {
+      const { fixture, store } = await editar()
+      const router = TestBed.inject(Router)
+      vi.spyOn(router, 'navigate').mockResolvedValue(true)
+      ;(fixture.nativeElement as HTMLElement).querySelector('form')!.dispatchEvent(new Event('submit'))
+      await fixture.whenStable()
+      expect(store.update).toHaveBeenCalledWith('rest-1', 'dish-1', expect.objectContaining({ name: 'Paella', price: 12.5 }))
+      expect(store.create).not.toHaveBeenCalled()
     })
   })
 })

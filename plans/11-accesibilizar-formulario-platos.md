@@ -101,7 +101,7 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 - [x] **Tarea 12: Resumen de errores anunciado y foco al primer campo inválido**
   - Tests (unitario): tras un envío inválido aparece un elemento con `role="alert"` que indica el número de errores e incluye enlaces a cada campo. `document.activeElement` es el input del nombre. Si solo falta el ingrediente, el foco va al select de ingrediente. El `alert-error` de errores de API también tiene `role="alert"` (rojo).
   - Código: añadir el bloque de resumen y hacer `focus()` en el primer control con error (`ElementRef`/`viewChild`) tras validar.
-- [ ] **Tarea 13: Modo edición sigue funcionando**
+- [x] **Tarea 13: Modo edición sigue funcionando**
   - Tests (unitario): con `id` en la ruta, `DishService.getById` (falso) rellena los campos. Al enviar se llama a `store.update` y no a `store.create` (rojo si el refactor lo rompió; si pasa a la primera, confirmar que falla al cambiar la llamada).
   - Código: ajustes mínimos en `loadDish`/`onSubmit` con el nuevo tipo de formulario.
 
