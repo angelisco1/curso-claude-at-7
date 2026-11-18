@@ -59,7 +59,7 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 - [x] **Tarea 1: Runner de tests unitarios en web-admin**
   - Tests: `dish-form.component.test.ts` con un primer test "se crea el componente". Usa `TestBed`, `provideRouter([])` y un `ActivatedRoute` falso con `restaurantId = 'rest-1'`, y sustituye `DishStore`, `DishService` e `IngredientStore` por dobles con `vi.fn()`. Debe pasar (es la base).
   - Código: añadir `vitest` y `jsdom` como devDependencies de `web-admin`. Añadir el target `test` en `angular.json` con builder `@angular/build:unit-test` e `include: ['src/**/*.test.ts']`, y el script `test` en `packages/web-admin/package.json`. En el `package.json` raíz, `npm test` pasa a ejecutar la API y `web-admin`, y se añade `test:admin`. Actualizar la sección Comandos de `CLAUDE.md`.
-- [ ] **Tarea 2: Infraestructura Playwright en web-admin**
+- [x] **Tarea 2: Infraestructura Playwright en web-admin**
   - Tests: `packages/web-admin/e2e/dish-form.a11y.spec.ts` con un primer test que entra como admin (helper `login_as_admin` en `e2e/helpers.ts`), navega a `/restaurants/rest-1/dishes/new` y comprueba que se ve "Nuevo plato". Debe pasar.
   - Código: añadir `@playwright/test` y `@axe-core/playwright` como devDependencies de `web-admin`. Crear `playwright.config.ts` con Chromium y `baseURL` `http://localhost:4200`. El `webServer` arranca la API con el seed previo (`npm run seed && npm run dev:api`, esperando a `http://localhost:3000/health`) y `npm run dev:admin` (esperando a `:4200`), con `reuseExistingServer: !process.env.CI`. Añadir los scripts `e2e` en `web-admin` y `e2e` en la raíz, e ignorar `test-results/` y `playwright-report/` en `.gitignore`.
 
