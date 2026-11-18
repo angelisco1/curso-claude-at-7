@@ -95,7 +95,7 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 - [x] **Tarea 10: `<form>` con `ngSubmit` y botones Guardar/Cancelar nativos**
   - Tests (unitario): existe un `form`. "Guardar" es `button[type=submit]` y "Cancelar" es un `a` con `routerLink` al listado. Con datos válidos (nombre, precio y un ingrediente), disparar `submit` en el form llama a `store.create('rest-1', form)` y navega al listado (rojo).
   - Código: `<form (ngSubmit)="onSubmit()" novalidate>`, Guardar como `<button type="submit">` (con `aria-busy` mientras `loading()`), Cancelar como `<a routerLink class="btn">`.
-- [ ] **Tarea 11: Validación en el envío con error por campo**
+- [x] **Tarea 11: Validación en el envío con error por campo**
   - Tests (unitario): con nombre vacío, precio `null` y sin ingredientes, al enviar no se llama a `store.create`. Nombre y precio tienen `aria-invalid="true"` y `aria-describedby` con el id de un mensaje visible que contiene el texto de `validate_dish_form`. El `fieldset` de ingredientes y su select quedan asociados (`aria-describedby`) al mensaje "Añade al menos un ingrediente". Al corregir el campo, o al añadir un ingrediente, el error desaparece (rojo).
   - Código: `onSubmit` valida antes de llamar al store. El precio inicial pasa a `null` en lugar de `0` (con un tipo de formulario propio que admite `null` y se convierte a `CreateDishDto` al enviar). Mensajes con `id="dish-<campo>-error"`.
 - [ ] **Tarea 12: Resumen de errores anunciado y foco al primer campo inválido**
@@ -175,3 +175,4 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 - **DEC12:** Los tests E2E usan nombres de plato únicos (`Plato E2E <timestamp>`) en `rest-1`. — _Motivo:_ el seed no borra los datos previos (hay otra issue abierta para eso), así que se evitan colisiones entre ejecuciones.
 - **DEC13:** La regla "al menos un ingrediente" solo se valida en el cliente; la API no cambia. Al editar un plato existente sin ingredientes, habrá que añadir uno para poder guardarlo. — _Motivo:_ la API está fuera del alcance (respuesta a D3). Si quieres que la API también lo exija, sería otra issue.
 - **DEC14:** El test de `aria-hidden` en los iconos ya pasaba antes de implementar (lucide-angular lo pone por defecto); se añade igualmente `aria-hidden="true"` explícito en la plantilla para no depender de la librería. — _Motivo:_ el criterio de accesibilidad queda garantizado por el propio marcado.
+- **DEC15:** Se excluyen `src/**/*.test.ts` de `tsconfig.app.json`. — _Motivo:_ sin ello `ng build` intentaba compilar los tests unitarios y fallaba (`vi`/`describe` sin tipos); el build de producción debe seguir compilando.

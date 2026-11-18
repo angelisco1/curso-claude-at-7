@@ -6,9 +6,12 @@ import { LucideAngularModule } from 'lucide-angular'
 import { combineLatest, firstValueFrom, of } from 'rxjs'
 import { DishStore } from '../../store/dish.store'
 import { DishService } from '../../services/dish.service'
-import { validate_new_ingredient, type NewIngredientErrors } from './dish-form.validation'
+import { validate_dish_form, validate_new_ingredient, type DishFormErrors, type NewIngredientErrors } from './dish-form.validation'
 import { IngredientStore } from '../../../ingredients/store/ingredient.store'
 import type { CreateDishDto, DishCategory } from '../../models/dish.model'
+
+type DishFormValue = Omit<CreateDishDto, 'price'> & { price: number | null }
+type FormErrors = DishFormErrors & NewIngredientErrors
 
 @Component({
   selector: 'app-dish-form',
@@ -32,17 +35,17 @@ export class DishFormComponent implements OnInit {
   restaurantId: string = ''
   loading = signal(false)
   error = signal<string | null>(null)
-  errors = signal<NewIngredientErrors>({})
+  errors = signal<FormErrors>({})
 
   categories: DishCategory[] = ['entrante', 'principal', 'postre', 'bebida']
 
-  form: CreateDishDto = this.emptyForm()
+  form: DishFormValue = this.emptyForm()
 
-  private emptyForm(): CreateDishDto {
+  private emptyForm(): DishFormValue {
     return {
       name: '',
       description: null,
-      price: 0,
+      price: null,
       category: 'principal',
       available: true,
       ingredients: []
@@ -128,6 +131,27 @@ export class DishFormComponent implements OnInit {
     ]
     this.newIngredientId = ''
     this.newIngredientQty = 1
+    this.revalidate()
+  }
+
+  select_described_by(): string | null {
+    const ids = [
+      this.errors().ingredient ? 'dish-new-ingredient-error' : null,
+      this.errors().ingredients ? 'dish-ingredients-error' : null
+    ].filter(Boolean)
+    return ids.length > 0 ? ids.join(' ') : null
+  }
+
+  // Al corregir un campo se actualizan solo los errores que ya se estaban mostrando
+  revalidate(): void {
+    const current = this.errors()
+    const fresh = validate_dish_form(this.form)
+    this.errors.set({
+      ...current,
+      name: current.name ? fresh.name : undefined,
+      price: current.price ? fresh.price : undefined,
+      ingredients: current.ingredients ? fresh.ingredients : undefined
+    })
   }
 
   removeIngredient(ingredientId: string): void {
@@ -142,12 +166,17 @@ export class DishFormComponent implements OnInit {
 
   async onSubmit(): Promise<void> {
     this.error.set(null)
+    const validation = validate_dish_form(this.form)
+    this.errors.update(current => ({ ...current, name: validation.name, price: validation.price, ingredients: validation.ingredients }))
+    if (Object.keys(validation).length > 0) return
+
+    const dto: CreateDishDto = { ...this.form, price: this.form.price as number }
     this.loading.set(true)
     try {
       if (this.isEditing && this.dishId) {
-        await this.store.update(this.restaurantId, this.dishId, this.form)
+        await this.store.update(this.restaurantId, this.dishId, dto)
       } else {
-        await this.store.create(this.restaurantId, this.form)
+        await this.store.create(this.restaurantId, dto)
       }
       this.router.navigate(['/restaurants', this.restaurantId, 'dishes'])
     } catch (err: any) {

@@ -227,4 +227,61 @@ describe('DishFormComponent', () => {
       expect(navigate).toHaveBeenCalledWith(['/restaurants', 'rest-1', 'dishes'])
     })
   })
+
+  describe('validación en el envío', () => {
+    async function enviarVacio() {
+      const ctx = configurar()
+      await ctx.fixture.whenStable()
+      ctx.fixture.detectChanges()
+      const el = ctx.fixture.nativeElement as HTMLElement
+      el.querySelector('form')!.dispatchEvent(new Event('submit'))
+      await ctx.fixture.whenStable()
+      ctx.fixture.detectChanges()
+      return { ...ctx, el }
+    }
+    const mensaje = (el: HTMLElement, control: Element | null) =>
+      el.querySelector(`#${control?.getAttribute('aria-describedby')!.split(' ')[0]}`)
+
+    it('el precio inicial está vacío', () => {
+      const { fixture } = configurar()
+      expect(fixture.componentInstance.form.price).toBeNull()
+    })
+
+    it('no llama a store.create y marca nombre y precio como inválidos', async () => {
+      const { store, el } = await enviarVacio()
+      expect(store.create).not.toHaveBeenCalled()
+      const name = el.querySelector('#dish-name')
+      const price = el.querySelector('#dish-price')
+      expect(name?.getAttribute('aria-invalid')).toBe('true')
+      expect(price?.getAttribute('aria-invalid')).toBe('true')
+      expect(mensaje(el, name)?.textContent).toContain('El nombre es obligatorio')
+      expect(mensaje(el, price)?.textContent).toContain('El precio debe ser mayor que 0')
+    })
+
+    it('asocia el fieldset y el select de ingredientes con el mensaje', async () => {
+      const { el } = await enviarVacio()
+      const fieldset = el.querySelector('fieldset')
+      const select = el.querySelector('#dish-new-ingredient')
+      expect(mensaje(el, fieldset)?.textContent).toContain('Añade al menos un ingrediente')
+      expect(select?.getAttribute('aria-describedby')).toContain('dish-ingredients-error')
+    })
+
+    it('el error desaparece al corregir el campo o añadir un ingrediente', async () => {
+      const { fixture, el } = await enviarVacio()
+      const name = el.querySelector('#dish-name') as HTMLInputElement
+      name.value = 'Paella'
+      name.dispatchEvent(new Event('input'))
+      fixture.detectChanges()
+      expect(name.getAttribute('aria-invalid')).toBeNull()
+      expect(el.querySelector('#dish-name-error')).toBeNull()
+
+      const select = el.querySelector('#dish-new-ingredient') as HTMLSelectElement
+      select.value = 'ing-1'
+      select.dispatchEvent(new Event('change'))
+      ;(el.querySelector('button[aria-label="Añadir ingrediente"]') as HTMLButtonElement).click()
+      fixture.detectChanges()
+      expect(el.querySelector('#dish-ingredients-error')).toBeNull()
+      expect(el.querySelector('fieldset')?.getAttribute('aria-describedby')).toBeNull()
+    })
+  })
 })
