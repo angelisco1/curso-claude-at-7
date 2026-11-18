@@ -65,7 +65,7 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 
 ### Validación (lógica pura)
 
-- [ ] **Tarea 3: `validate_dish_form`**
+- [x] **Tarea 3: `validate_dish_form`**
   - Tests: en `dish-form.validation.test.ts`, el nombre vacío o solo con espacios da el error "El nombre es obligatorio". El precio `null`, `0` o negativo da "El precio debe ser mayor que 0". Sin ingredientes da "Añade al menos un ingrediente". Un formulario válido (con un ingrediente o más) devuelve `{}` (rojo).
   - Código: en `dish-form.validation.ts`, la función pura `validate_dish_form(form): Partial<Record<'name' | 'price' | 'ingredients', string>>`.
 - [ ] **Tarea 4: `validate_new_ingredient`**
