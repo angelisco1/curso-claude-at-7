@@ -122,7 +122,7 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 - [x] **Tarea 17: Orden de tabulación lógico**
   - Tests (E2E): desde el enlace "volver", con Tab el foco recorre en este orden: volver → nombre → precio → categoría → disponible → descripción → ingrediente → cantidad → añadir → Cancelar → Guardar.
   - Código: corregir el orden del DOM si hace falta (sin `tabindex` positivos).
-- [ ] **Tarea 18: Chequeo automático WCAG 2.2 AA con axe**
+- [x] **Tarea 18: Chequeo automático WCAG 2.2 AA con axe**
   - Tests (E2E): `new AxeBuilder({ page }).include('form').withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()` no da violaciones, ni en el estado inicial ni con los errores visibles (rojo si quedan violaciones).
   - Código: corregir lo que reporte axe (p. ej. contraste de los mensajes de error, `autocomplete`).
 - [ ] **Tarea 19: Test de vídeo del flujo completo con teclado**
