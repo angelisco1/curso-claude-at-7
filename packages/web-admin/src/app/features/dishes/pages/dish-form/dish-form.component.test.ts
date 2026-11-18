@@ -135,4 +135,41 @@ describe('DishFormComponent', () => {
       expect(msgQty?.textContent).toContain('La cantidad debe ser mayor que 0')
     })
   })
+
+  describe('lista de ingredientes', () => {
+    async function conIngredientes() {
+      const ctx = configurar()
+      await ctx.fixture.whenStable()
+      ctx.fixture.componentInstance.form.ingredients = [
+        { ingredientId: 'ing-1', quantity: 2 },
+        { ingredientId: 'ing-2', quantity: 1 }
+      ]
+      ctx.fixture.detectChanges()
+      return ctx
+    }
+
+    it('pinta los ingredientes en un ul > li', async () => {
+      const { fixture } = await conIngredientes()
+      const items = fixture.nativeElement.querySelectorAll('ul li')
+      expect(items.length).toBe(2)
+      expect(items[0].textContent).toContain('Tomate')
+    })
+
+    it('cada ingrediente tiene un botón "Quitar <nombre>"', async () => {
+      const { fixture } = await conIngredientes()
+      const boton = fixture.nativeElement.querySelector('ul li button') as HTMLButtonElement
+      expect(boton.getAttribute('type')).toBe('button')
+      expect(boton.getAttribute('aria-label')).toBe('Quitar Tomate (kg)')
+    })
+
+    it('al quitar se elimina y el foco vuelve al select de ingrediente', async () => {
+      const { fixture } = await conIngredientes()
+      document.body.appendChild(fixture.nativeElement)
+      const boton = fixture.nativeElement.querySelector('ul li button') as HTMLButtonElement
+      boton.click()
+      fixture.detectChanges()
+      expect(fixture.componentInstance.form.ingredients).toEqual([{ ingredientId: 'ing-2', quantity: 1 }])
+      expect(document.activeElement).toBe(fixture.nativeElement.querySelector('#dish-new-ingredient'))
+    })
+  })
 })

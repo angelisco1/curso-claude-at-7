@@ -83,7 +83,7 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 - [x] **Tarea 7: Botón nativo para añadir ingrediente con errores por campo**
   - Tests (unitario): "Añadir ingrediente" es un `button[type=button]` con `aria-label`. Al pulsarlo con datos válidos se añade el ingrediente a `form.ingredients`. Con datos inválidos no se añade, el control queda con `aria-invalid="true"` y `aria-describedby` apunta al mensaje de `validate_new_ingredient` (rojo).
   - Código: sustituir el `div` por `<button>`. `addIngredient()` usa `validate_new_ingredient` y guarda los errores en la signal `errors`.
-- [ ] **Tarea 8: Lista de ingredientes y botón nativo para quitarlos**
+- [x] **Tarea 8: Lista de ingredientes y botón nativo para quitarlos**
   - Tests (unitario): los ingredientes añadidos se pintan en un `ul` > `li`. Cada uno tiene un `button` con `aria-label` "Quitar <nombre>". Al pulsarlo se elimina y el foco vuelve al select de ingrediente (rojo).
   - Código: chips como `<ul>/<li>` y `chip-remove` como `<button type="button">`; tras quitar, `focus()` en el select.
 - [ ] **Tarea 9: Enlace "volver" e iconos decorativos**

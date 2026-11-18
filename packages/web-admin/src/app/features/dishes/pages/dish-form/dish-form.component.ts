@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core'
+import { Component, DestroyRef, ElementRef, inject, OnInit, signal, viewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Router, RouterLink } from '@angular/router'
@@ -24,6 +24,8 @@ export class DishFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute)
   private readonly router = inject(Router)
   private readonly destroyRef = inject(DestroyRef)
+
+  readonly ingredientSelect = viewChild<ElementRef<HTMLSelectElement>>('ingredientSelect')
 
   isEditing = false
   dishId: string | null = null
@@ -130,6 +132,7 @@ export class DishFormComponent implements OnInit {
 
   removeIngredient(ingredientId: string): void {
     this.form.ingredients = this.form.ingredients.filter(i => i.ingredientId !== ingredientId)
+    this.ingredientSelect()?.nativeElement.focus()
   }
 
   getIngredientName(ingredientId: string): string {
