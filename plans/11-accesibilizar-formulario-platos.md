@@ -7,7 +7,7 @@
 | Issue | #11 — Accesibilizar el formulario de platos |
 | Fecha | 2026-11-18 |
 | Autor | angelvil92 |
-| Estado | En curso |
+| Estado | Implementado |
 | Rama sugerida | `feat/11-accesibilizar-formulario-platos` |
 
 ## Objetivo y alcance
@@ -134,18 +134,18 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 
 ## Criterios de aceptación
 
-- [ ] El formulario de platos (crear y editar) se puede completar y enviar solo con el teclado: Tab/Shift+Tab, flechas en los `select`, Espacio/Enter en botones y Enter para enviar.
-- [ ] El orden de tabulación coincide con el visual y todos los elementos interactivos muestran un indicador de foco visible en `web-admin`, `web-empleados` y `web-clientes`.
-- [ ] Todos los controles tienen etiqueta asociada y los botones/enlaces de solo icono tienen nombre accesible.
-- [ ] Son obligatorios el nombre, un precio mayor que 0 y al menos un ingrediente.
-- [ ] Al enviar con campos obligatorios vacíos se muestran errores por campo (`aria-invalid` + `aria-describedby`) y un resumen anunciado (`role="alert"`), el foco va al primer campo inválido y no se llama a la API.
-- [ ] `axe` no reporta violaciones WCAG 2.2 A/AA en el formulario (estado inicial y con errores).
-- [ ] Existe en el repo `packages/web-admin/e2e/videos/dish-form-teclado.webm`, generado con Playwright. Con pausas visibles entre acciones, se ve primero el envío del formulario vacío con sus errores y después la creación de un plato nuevo usando solo el teclado (tabs, flechas, espacio, enter) hasta verlo en el listado.
-- [ ] `npm run e2e` pasa partiendo de las apps paradas (Playwright hace el seed y levanta la API y `web-admin`).
-- [ ] Los tests unitarios de `web-admin` (validación y componente) pasan con `npm run test:admin`.
-- [ ] `npm run build -w @resttek/web-admin`, `-w @resttek/web-empleados` y `-w @resttek/web-clientes` compilan sin errores.
-- [ ] Todos los tests pasan con `npm test`
-- [ ] Todas las tareas del plan están marcadas
+- [x] El formulario de platos (crear y editar) se puede completar y enviar solo con el teclado: Tab/Shift+Tab, flechas en los `select`, Espacio/Enter en botones y Enter para enviar.
+- [x] El orden de tabulación coincide con el visual y todos los elementos interactivos muestran un indicador de foco visible en `web-admin`, `web-empleados` y `web-clientes`.
+- [x] Todos los controles tienen etiqueta asociada y los botones/enlaces de solo icono tienen nombre accesible.
+- [x] Son obligatorios el nombre, un precio mayor que 0 y al menos un ingrediente.
+- [x] Al enviar con campos obligatorios vacíos se muestran errores por campo (`aria-invalid` + `aria-describedby`) y un resumen anunciado (`role="alert"`), el foco va al primer campo inválido y no se llama a la API.
+- [x] `axe` no reporta violaciones WCAG 2.2 A/AA en el formulario (estado inicial y con errores).
+- [x] Existe en el repo `packages/web-admin/e2e/videos/dish-form-teclado.webm`, generado con Playwright. Con pausas visibles entre acciones, se ve primero el envío del formulario vacío con sus errores y después la creación de un plato nuevo usando solo el teclado (tabs, flechas, espacio, enter) hasta verlo en el listado.
+- [x] `npm run e2e` pasa partiendo de las apps paradas (Playwright hace el seed y levanta la API y `web-admin`).
+- [x] Los tests unitarios de `web-admin` (validación y componente) pasan con `npm run test:admin`.
+- [x] `npm run build -w @resttek/web-admin`, `-w @resttek/web-empleados` y `-w @resttek/web-clientes` compilan sin errores.
+- [x] Todos los tests pasan con `npm test`
+- [x] Todas las tareas del plan están marcadas
 
 ## Dudas abiertas
 
