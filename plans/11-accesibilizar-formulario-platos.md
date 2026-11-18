@@ -86,7 +86,7 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 - [x] **Tarea 8: Lista de ingredientes y botón nativo para quitarlos**
   - Tests (unitario): los ingredientes añadidos se pintan en un `ul` > `li`. Cada uno tiene un `button` con `aria-label` "Quitar <nombre>". Al pulsarlo se elimina y el foco vuelve al select de ingrediente (rojo).
   - Código: chips como `<ul>/<li>` y `chip-remove` como `<button type="button">`; tras quitar, `focus()` en el select.
-- [ ] **Tarea 9: Enlace "volver" e iconos decorativos**
+- [x] **Tarea 9: Enlace "volver" e iconos decorativos**
   - Tests (unitario): el enlace de volver tiene `aria-label` "Volver al listado de platos". Todos los `lucide-icon` del formulario tienen `aria-hidden="true"` (rojo).
   - Código: añadir `aria-label` al enlace y `aria-hidden` a los iconos.
 
@@ -174,3 +174,4 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 - **DEC11:** El retardo del vídeo se consigue con `slowMo: 400` ms y pausas explícitas de ~800 ms entre los pasos clave. — _Motivo:_ cada pulsación se ve bien sin alargar demasiado el vídeo.
 - **DEC12:** Los tests E2E usan nombres de plato únicos (`Plato E2E <timestamp>`) en `rest-1`. — _Motivo:_ el seed no borra los datos previos (hay otra issue abierta para eso), así que se evitan colisiones entre ejecuciones.
 - **DEC13:** La regla "al menos un ingrediente" solo se valida en el cliente; la API no cambia. Al editar un plato existente sin ingredientes, habrá que añadir uno para poder guardarlo. — _Motivo:_ la API está fuera del alcance (respuesta a D3). Si quieres que la API también lo exija, sería otra issue.
+- **DEC14:** El test de `aria-hidden` en los iconos ya pasaba antes de implementar (lucide-angular lo pone por defecto); se añade igualmente `aria-hidden="true"` explícito en la plantilla para no depender de la librería. — _Motivo:_ el criterio de accesibilidad queda garantizado por el propio marcado.

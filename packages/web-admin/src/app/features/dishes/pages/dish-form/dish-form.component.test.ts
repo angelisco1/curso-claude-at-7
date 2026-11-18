@@ -172,4 +172,24 @@ describe('DishFormComponent', () => {
       expect(document.activeElement).toBe(fixture.nativeElement.querySelector('#dish-new-ingredient'))
     })
   })
+
+  describe('enlace volver e iconos', () => {
+    it('el enlace de volver tiene aria-label', () => {
+      const { fixture } = configurar()
+      const enlace = fixture.nativeElement.querySelector('a.back-link')
+      expect(enlace.getAttribute('aria-label')).toBe('Volver al listado de platos')
+    })
+
+    it('todos los iconos son decorativos', async () => {
+      const { fixture } = configurar()
+      await fixture.whenStable()
+      fixture.componentInstance.form.ingredients = [{ ingredientId: 'ing-1', quantity: 1 }]
+      fixture.detectChanges()
+      const iconos = Array.from(fixture.nativeElement.querySelectorAll('lucide-icon')) as HTMLElement[]
+      expect(iconos.length).toBeGreaterThanOrEqual(3)
+      for (const icono of iconos) {
+        expect(icono.getAttribute('aria-hidden')).toBe('true')
+      }
+    })
+  })
 })
