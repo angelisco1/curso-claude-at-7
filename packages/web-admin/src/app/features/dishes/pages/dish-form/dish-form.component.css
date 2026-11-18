@@ -113,16 +113,11 @@ select.form-control {
   padding-right: 32px;
 }
 
-.fake-title {
+.page-title {
+  margin: 0;
   font-size: 22px;
   font-weight: 600;
   color: var(--text-primary);
-}
-
-.fake-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
 }
 
 .fake-subtitle {

@@ -47,4 +47,31 @@ describe('DishFormComponent', () => {
     const { fixture } = configurar()
     expect(fixture.componentInstance).toBeTruthy()
   })
+
+  describe('encabezado y etiquetas', () => {
+    it('muestra "Nuevo plato" como h1', () => {
+      const { fixture } = configurar()
+      const h1 = fixture.nativeElement.querySelector('h1')
+      expect(h1?.textContent?.trim()).toBe('Nuevo plato')
+    })
+
+    it('muestra "Editar plato" como h1 al editar', async () => {
+      const { fixture, service } = configurar({ id: 'dish-1' })
+      service.getById.mockReturnValue(of({
+        id: 'dish-1', name: 'Paella', description: null, price: 12, category: 'principal',
+        available: true, restaurantId: 'rest-1', ingredients: [], createdAt: '', updatedAt: ''
+      }))
+      await fixture.whenStable()
+      fixture.detectChanges()
+      expect(fixture.nativeElement.querySelector('h1')?.textContent?.trim()).toBe('Editar plato')
+    })
+
+    it.each(['name', 'price', 'category', 'available', 'description'])('el control %s tiene un label asociado', campo => {
+      const { fixture } = configurar()
+      const control = fixture.nativeElement.querySelector(`[name="${campo}"]`) as HTMLElement
+      expect(control.id).toBeTruthy()
+      const label = fixture.nativeElement.querySelector(`label[for="${control.id}"]`)
+      expect(label).not.toBeNull()
+    })
+  })
 })
