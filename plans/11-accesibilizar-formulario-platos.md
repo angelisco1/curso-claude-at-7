@@ -125,7 +125,7 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 - [x] **Tarea 18: Chequeo automático WCAG 2.2 AA con axe**
   - Tests (E2E): `new AxeBuilder({ page }).include('form').withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()` no da violaciones, ni en el estado inicial ni con los errores visibles (rojo si quedan violaciones).
   - Código: corregir lo que reporte axe (p. ej. contraste de los mensajes de error, `autocomplete`).
-- [ ] **Tarea 19: Test de vídeo del flujo completo con teclado**
+- [x] **Tarea 19: Test de vídeo del flujo completo con teclado**
   - Tests (E2E): `e2e/dish-form.keyboard-video.spec.ts` con `test.use({ video: 'on', viewport: { width: 1280, height: 800 }, launchOptions: { slowMo: 400 } })` y `page.waitForTimeout(800)` entre los pasos clave. El flujo usa solo `page.keyboard` (sin `click` tras el login):
     1. Tab hasta Guardar y Enter con el formulario vacío: se ven los errores (nombre, precio y ingredientes) y el foco va al nombre.
     2. Escribir el nombre → Tab → precio → Tab → categoría (flechas) → Tab → disponible → Tab → descripción → Tab → ingrediente (flechas) → Tab → cantidad → Tab → Espacio en "Añadir ingrediente".
@@ -177,3 +177,4 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 - **DEC14:** El test de `aria-hidden` en los iconos ya pasaba antes de implementar (lucide-angular lo pone por defecto); se añade igualmente `aria-hidden="true"` explícito en la plantilla para no depender de la librería. — _Motivo:_ el criterio de accesibilidad queda garantizado por el propio marcado.
 - **DEC15:** Se excluyen `src/**/*.test.ts` de `tsconfig.app.json`. — _Motivo:_ sin ello `ng build` intentaba compilar los tests unitarios y fallaba (`vi`/`describe` sin tipos); el build de producción debe seguir compilando.
 - **DEC16:** En los E2E, para elegir opción en un `select` con teclado se usa el helper `elegir_opcion_con_teclado`: prueba la flecha y, si el valor no cambia, escribe el comienzo del texto de la opción. — _Motivo:_ en Chromium sobre macOS la flecha en un `select` cerrado solo abre el desplegable y Playwright no lo maneja; no es un fallo de la aplicación.
+- **DEC17:** El vídeo solo se guarda (`saveAs`) cuando `GRABAR_VIDEO=1`, que fija el script `e2e:video`; el test se ejecuta igualmente en `npm run e2e`. — _Motivo:_ el `.webm` está versionado y no debe cambiar (binario de ~1 MB) en cada ejecución de los E2E.

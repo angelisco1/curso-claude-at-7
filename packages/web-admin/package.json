@@ -7,7 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test --watch=false",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:video": "GRABAR_VIDEO=1 playwright test dish-form.keyboard-video"
   },
   "private": true,
   "dependencies": {
