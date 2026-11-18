@@ -16,6 +16,7 @@ Genera un plan de implementación en `plans/<num_issue>-<breve-descripcion>.md` 
 4. **Genera el nombre del archivo**: `<num_issue>-<breve-descripcion>.md`, con la descripción en minúsculas, sin tildes, con guiones y de 2 a 5 palabras (ej. `12-paginar-listado-vendehumos.md`). Crea la carpeta `plans/` si no existe. Si el archivo ya existe, no lo sobrescribas: pregunta al usuario.
 5. **Rellena el plan** según las reglas de abajo y guárdalo.
 6. **Responde al usuario** con la ruta del plan, un resumen muy breve y las dudas abiertas más importantes para que las conteste.
+7. **Avisa por Slack** al canal `curso-claude` (ID `C0CHB9C0CGK`) con la herramienta `mcp__slack__slack_post_message` (si no está cargada, cárgala antes con ToolSearch). Mensaje corto en español con: la ruta del plan, el número de issue, el número de tareas y cuántas dudas abiertas quedan. Ejemplo: `📝 Plan listo: plans/12-paginar-listado-vendehumos.md (issue #12, 6 tareas, 2 dudas abiertas)`. Si el envío falla, no reintentes en bucle: dilo al usuario en tu respuesta.
 
 ## Reglas de contenido
 

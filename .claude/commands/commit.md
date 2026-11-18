@@ -59,9 +59,8 @@ $ARGUMENTS
 3. Si los cambios mezclan varias intenciones distintas, propón dividirlos en varios commits y haz uno por cada intención.
 4. Elige el tipo y el scope que mejor describan el cambio, teniendo en cuenta las indicaciones del usuario si las hay.
 5. Redacta el mensaje cumpliendo las reglas anteriores.
-6. Muestra el mensaje del commit al usuario, y pidele que lo confirme con la tool `AskUserQuestion`. Si da el OK, continua con los siguientes pasos, y si no, proponle un nuevo mensaje y vuelve a preguntarle si este nuevo le parece mejor.
-7. Crea el commit con `git commit -m "<mensaje>"` (usa varios `-m` o un heredoc si hay cuerpo y pies).
-8. Muestra el resultado con `git log -1 --stat`.
+6. Crea el commit con `git commit -m "<mensaje>"` (usa varios `-m` o un heredoc si hay cuerpo y pies).
+7. Muestra el resultado con `git log -1 --stat`.
 
 ## Restricciones
 
