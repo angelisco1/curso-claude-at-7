@@ -116,7 +116,7 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 
 ### Comportamiento con teclado en navegador real
 
-- [ ] **Tarea 16: Flujo de ingredientes y envío con teclado**
+- [x] **Tarea 16: Flujo de ingredientes y envío con teclado**
   - Tests (E2E): con el teclado, Tab hasta el select de ingrediente, flechas para elegir, Tab a la cantidad, Tab y Espacio en "Añadir ingrediente": aparece el ingrediente. Después, rellenando nombre "Plato E2E <timestamp>" y precio (con el ingrediente ya añadido), Enter en el nombre envía y el plato aparece en el listado. Debe pasar con lo implementado; si falla, corregir.
   - Código: correcciones que salgan del test.
 - [ ] **Tarea 17: Orden de tabulación lógico**
@@ -176,3 +176,4 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 - **DEC13:** La regla "al menos un ingrediente" solo se valida en el cliente; la API no cambia. Al editar un plato existente sin ingredientes, habrá que añadir uno para poder guardarlo. — _Motivo:_ la API está fuera del alcance (respuesta a D3). Si quieres que la API también lo exija, sería otra issue.
 - **DEC14:** El test de `aria-hidden` en los iconos ya pasaba antes de implementar (lucide-angular lo pone por defecto); se añade igualmente `aria-hidden="true"` explícito en la plantilla para no depender de la librería. — _Motivo:_ el criterio de accesibilidad queda garantizado por el propio marcado.
 - **DEC15:** Se excluyen `src/**/*.test.ts` de `tsconfig.app.json`. — _Motivo:_ sin ello `ng build` intentaba compilar los tests unitarios y fallaba (`vi`/`describe` sin tipos); el build de producción debe seguir compilando.
+- **DEC16:** En los E2E, para elegir opción en un `select` con teclado se usa el helper `elegir_opcion_con_teclado`: prueba la flecha y, si el valor no cambia, escribe el comienzo del texto de la opción. — _Motivo:_ en Chromium sobre macOS la flecha en un `select` cerrado solo abre el desplegable y Playwright no lo maneja; no es un fallo de la aplicación.
