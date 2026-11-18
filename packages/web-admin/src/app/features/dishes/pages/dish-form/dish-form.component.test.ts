@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing'
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router'
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router'
 import { importProvidersFrom, signal } from '@angular/core'
 import { ChevronLeft, LucideAngularModule, Plus, Trash2 } from 'lucide-angular'
 import { of } from 'rxjs'
@@ -190,6 +190,41 @@ describe('DishFormComponent', () => {
       for (const icono of iconos) {
         expect(icono.getAttribute('aria-hidden')).toBe('true')
       }
+    })
+  })
+
+  describe('envío', () => {
+    it('Guardar es submit y Cancelar es un enlace al listado', () => {
+      const { fixture } = configurar()
+      const el = fixture.nativeElement as HTMLElement
+      expect(el.querySelector('form')).not.toBeNull()
+      const guardar = Array.from(el.querySelectorAll('button')).find(b => b.textContent?.includes('Guardar'))
+      expect(guardar?.getAttribute('type')).toBe('submit')
+      const cancelar = Array.from(el.querySelectorAll('a')).find(a => a.textContent?.includes('Cancelar'))
+      expect(cancelar?.getAttribute('href')).toBe('/restaurants/rest-1/dishes')
+    })
+
+    it('al enviar datos válidos crea el plato y navega al listado', async () => {
+      const { fixture, store } = configurar()
+      await fixture.whenStable()
+      const router = TestBed.inject(Router)
+      const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true)
+      const el = fixture.nativeElement as HTMLElement
+      const name = el.querySelector('#dish-name') as HTMLInputElement
+      name.value = 'Paella'
+      name.dispatchEvent(new Event('input'))
+      const price = el.querySelector('#dish-price') as HTMLInputElement
+      price.value = '12'
+      price.dispatchEvent(new Event('input'))
+      fixture.componentInstance.form.ingredients = [{ ingredientId: 'ing-1', quantity: 2 }]
+      fixture.detectChanges()
+
+      el.querySelector('form')!.dispatchEvent(new Event('submit'))
+      await fixture.whenStable()
+
+      expect(store.create).toHaveBeenCalledWith('rest-1', fixture.componentInstance.form)
+      expect(store.create.mock.calls[0][1]).toMatchObject({ name: 'Paella', price: 12 })
+      expect(navigate).toHaveBeenCalledWith(['/restaurants', 'rest-1', 'dishes'])
     })
   })
 })

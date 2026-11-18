@@ -92,7 +92,7 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 
 ### Envío y errores
 
-- [ ] **Tarea 10: `<form>` con `ngSubmit` y botones Guardar/Cancelar nativos**
+- [x] **Tarea 10: `<form>` con `ngSubmit` y botones Guardar/Cancelar nativos**
   - Tests (unitario): existe un `form`. "Guardar" es `button[type=submit]` y "Cancelar" es un `a` con `routerLink` al listado. Con datos válidos (nombre, precio y un ingrediente), disparar `submit` en el form llama a `store.create('rest-1', form)` y navega al listado (rojo).
   - Código: `<form (ngSubmit)="onSubmit()" novalidate>`, Guardar como `<button type="submit">` (con `aria-busy` mientras `loading()`), Cancelar como `<a routerLink class="btn">`.
 - [ ] **Tarea 11: Validación en el envío con error por campo**
