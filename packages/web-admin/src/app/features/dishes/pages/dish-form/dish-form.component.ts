@@ -1,4 +1,4 @@
-import { Component, DestroyRef, ElementRef, inject, OnInit, signal, viewChild } from '@angular/core'
+import { Component, computed, DestroyRef, ElementRef, inject, OnInit, signal, viewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Router, RouterLink } from '@angular/router'
@@ -27,6 +27,7 @@ export class DishFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute)
   private readonly router = inject(Router)
   private readonly destroyRef = inject(DestroyRef)
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef)
 
   readonly ingredientSelect = viewChild<ElementRef<HTMLSelectElement>>('ingredientSelect')
 
@@ -36,6 +37,15 @@ export class DishFormComponent implements OnInit {
   loading = signal(false)
   error = signal<string | null>(null)
   errors = signal<FormErrors>({})
+
+  readonly summaryItems = computed(() => {
+    const errors = this.errors()
+    const items: { message: string, targetId: string }[] = []
+    if (errors.name) items.push({ message: errors.name, targetId: 'dish-name' })
+    if (errors.price) items.push({ message: errors.price, targetId: 'dish-price' })
+    if (errors.ingredients) items.push({ message: errors.ingredients, targetId: 'dish-new-ingredient' })
+    return items
+  })
 
   categories: DishCategory[] = ['entrante', 'principal', 'postre', 'bebida']
 
@@ -134,6 +144,11 @@ export class DishFormComponent implements OnInit {
     this.revalidate()
   }
 
+  focus_field(targetId: string, event?: Event): void {
+    event?.preventDefault()
+    this.host.nativeElement.querySelector<HTMLElement>(`#${targetId}`)?.focus()
+  }
+
   select_described_by(): string | null {
     const ids = [
       this.errors().ingredient ? 'dish-new-ingredient-error' : null,
@@ -168,7 +183,11 @@ export class DishFormComponent implements OnInit {
     this.error.set(null)
     const validation = validate_dish_form(this.form)
     this.errors.update(current => ({ ...current, name: validation.name, price: validation.price, ingredients: validation.ingredients }))
-    if (Object.keys(validation).length > 0) return
+    if (Object.keys(validation).length > 0) {
+      const first = this.summaryItems()[0]
+      if (first) this.focus_field(first.targetId)
+      return
+    }
 
     const dto: CreateDishDto = { ...this.form, price: this.form.price as number }
     this.loading.set(true)

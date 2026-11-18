@@ -9,7 +9,20 @@
   </div>
 
   @if (error()) {
-    <div class="alert-error">{{ error() }}</div>
+    <div class="alert-error" role="alert">{{ error() }}</div>
+  }
+
+  @if (summaryItems().length > 0) {
+    <div class="error-summary alert-error" role="alert">
+      <p class="error-summary-title">
+        @if (summaryItems().length === 1) { Hay 1 error en el formulario: } @else { Hay {{ summaryItems().length }} errores en el formulario: }
+      </p>
+      <ul>
+        @for (item of summaryItems(); track item.targetId) {
+          <li><a [href]="'#' + item.targetId" (click)="focus_field(item.targetId, $event)">{{ item.message }}</a></li>
+        }
+      </ul>
+    </div>
   }
 
   <form class="card form-card" (ngSubmit)="onSubmit()" novalidate>

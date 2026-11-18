@@ -98,7 +98,7 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 - [x] **Tarea 11: Validación en el envío con error por campo**
   - Tests (unitario): con nombre vacío, precio `null` y sin ingredientes, al enviar no se llama a `store.create`. Nombre y precio tienen `aria-invalid="true"` y `aria-describedby` con el id de un mensaje visible que contiene el texto de `validate_dish_form`. El `fieldset` de ingredientes y su select quedan asociados (`aria-describedby`) al mensaje "Añade al menos un ingrediente". Al corregir el campo, o al añadir un ingrediente, el error desaparece (rojo).
   - Código: `onSubmit` valida antes de llamar al store. El precio inicial pasa a `null` en lugar de `0` (con un tipo de formulario propio que admite `null` y se convierte a `CreateDishDto` al enviar). Mensajes con `id="dish-<campo>-error"`.
-- [ ] **Tarea 12: Resumen de errores anunciado y foco al primer campo inválido**
+- [x] **Tarea 12: Resumen de errores anunciado y foco al primer campo inválido**
   - Tests (unitario): tras un envío inválido aparece un elemento con `role="alert"` que indica el número de errores e incluye enlaces a cada campo. `document.activeElement` es el input del nombre. Si solo falta el ingrediente, el foco va al select de ingrediente. El `alert-error` de errores de API también tiene `role="alert"` (rojo).
   - Código: añadir el bloque de resumen y hacer `focus()` en el primer control con error (`ElementRef`/`viewChild`) tras validar.
 - [ ] **Tarea 13: Modo edición sigue funcionando**

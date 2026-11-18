@@ -284,4 +284,66 @@ describe('DishFormComponent', () => {
       expect(el.querySelector('fieldset')?.getAttribute('aria-describedby')).toBeNull()
     })
   })
+
+  describe('resumen de errores y foco', () => {
+    async function preparar() {
+      const ctx = configurar()
+      await ctx.fixture.whenStable()
+      document.body.appendChild(ctx.fixture.nativeElement)
+      const el = ctx.fixture.nativeElement as HTMLElement
+      const enviar = async () => {
+        el.querySelector('form')!.dispatchEvent(new Event('submit'))
+        await ctx.fixture.whenStable()
+        ctx.fixture.detectChanges()
+      }
+      return { ...ctx, el, enviar }
+    }
+
+    it('muestra un resumen con role=alert, el número de errores y enlaces a cada campo', async () => {
+      const { el, enviar } = await preparar()
+      await enviar()
+      const resumen = el.querySelector('.error-summary[role="alert"]')
+      expect(resumen).not.toBeNull()
+      expect(resumen!.textContent).toContain('3 errores')
+      const enlaces = Array.from(resumen!.querySelectorAll('a')).map(a => a.getAttribute('href'))
+      expect(enlaces).toEqual(['#dish-name', '#dish-price', '#dish-new-ingredient'])
+    })
+
+    it('mueve el foco al campo del nombre', async () => {
+      const { el, enviar } = await preparar()
+      await enviar()
+      expect(document.activeElement).toBe(el.querySelector('#dish-name'))
+    })
+
+    it('si solo falta el ingrediente, el foco va al select de ingrediente', async () => {
+      const { fixture, el, enviar } = await preparar()
+      fixture.componentInstance.form.name = 'Paella'
+      fixture.componentInstance.form.price = 10
+      await enviar()
+      expect(el.querySelector('.error-summary')!.textContent).toContain('1 error')
+      expect(document.activeElement).toBe(el.querySelector('#dish-new-ingredient'))
+    })
+
+    it('al pulsar un enlace del resumen se enfoca el campo sin navegar', async () => {
+      const { el, enviar } = await preparar()
+      await enviar()
+      const enlace = el.querySelector('.error-summary a[href="#dish-price"]') as HTMLAnchorElement
+      const evento = new MouseEvent('click', { bubbles: true, cancelable: true })
+      enlace.dispatchEvent(evento)
+      expect(evento.defaultPrevented).toBe(true)
+      expect(document.activeElement).toBe(el.querySelector('#dish-price'))
+    })
+
+    it('el error de la API se muestra con role=alert', async () => {
+      const { fixture, el, store, enviar } = await preparar()
+      store.create.mockRejectedValue({ error: { message: 'Fallo de la API' } })
+      fixture.componentInstance.form.name = 'Paella'
+      fixture.componentInstance.form.price = 10
+      fixture.componentInstance.form.ingredients = [{ ingredientId: 'ing-1', quantity: 1 }]
+      await enviar()
+      const alerta = el.querySelector('.alert-error')
+      expect(alerta?.getAttribute('role')).toBe('alert')
+      expect(alerta?.textContent).toContain('Fallo de la API')
+    })
+  })
 })
