@@ -80,7 +80,7 @@ Que el formulario de creación/edición de platos de `web-admin` cumpla WCAG 2.2
 - [x] **Tarea 6: Agrupación y etiquetas de la sección de ingredientes**
   - Tests (unitario): existe un `fieldset` con `legend` "Ingredientes del plato". El select de ingrediente y el input de cantidad tienen un `label` asociado (rojo).
   - Código: `<fieldset>` + `<legend>` y etiquetas (visualmente ocultas con `.sr-only` si hace falta). Añadir la utilidad `.sr-only` a `styles.css`.
-- [ ] **Tarea 7: Botón nativo para añadir ingrediente con errores por campo**
+- [x] **Tarea 7: Botón nativo para añadir ingrediente con errores por campo**
   - Tests (unitario): "Añadir ingrediente" es un `button[type=button]` con `aria-label`. Al pulsarlo con datos válidos se añade el ingrediente a `form.ingredients`. Con datos inválidos no se añade, el control queda con `aria-invalid="true"` y `aria-describedby` apunta al mensaje de `validate_new_ingredient` (rojo).
   - Código: sustituir el `div` por `<button>`. `addIngredient()` usa `validate_new_ingredient` y guarda los errores en la signal `errors`.
 - [ ] **Tarea 8: Lista de ingredientes y botón nativo para quitarlos**

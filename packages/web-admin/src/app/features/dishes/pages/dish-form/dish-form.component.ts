@@ -6,6 +6,7 @@ import { LucideAngularModule } from 'lucide-angular'
 import { combineLatest, firstValueFrom, of } from 'rxjs'
 import { DishStore } from '../../store/dish.store'
 import { DishService } from '../../services/dish.service'
+import { validate_new_ingredient, type NewIngredientErrors } from './dish-form.validation'
 import { IngredientStore } from '../../../ingredients/store/ingredient.store'
 import type { CreateDishDto, DishCategory } from '../../models/dish.model'
 
@@ -29,6 +30,7 @@ export class DishFormComponent implements OnInit {
   restaurantId: string = ''
   loading = signal(false)
   error = signal<string | null>(null)
+  errors = signal<NewIngredientErrors>({})
 
   categories: DishCategory[] = ['entrante', 'principal', 'postre', 'bebida']
 
@@ -46,7 +48,7 @@ export class DishFormComponent implements OnInit {
   }
 
   newIngredientId = ''
-  newIngredientQty = 1
+  newIngredientQty: number | null = 1
 
   get pageTitle(): string {
     return this.isEditing ? 'Editar plato' : 'Nuevo plato'
@@ -84,6 +86,7 @@ export class DishFormComponent implements OnInit {
         this.newIngredientId = ''
         this.newIngredientQty = 1
         this.error.set(null)
+        this.errors.set({})
         this.isEditing = !!(id && this.restaurantId)
         this.dishId = this.isEditing ? id : null
 
@@ -113,13 +116,13 @@ export class DishFormComponent implements OnInit {
   }
 
   addIngredient(): void {
-    if (!this.newIngredientId || this.newIngredientQty <= 0) return
-    const exists = this.form.ingredients.find(i => i.ingredientId === this.newIngredientId)
-    if (exists) return
+    const newErrors = validate_new_ingredient(this.newIngredientId, this.newIngredientQty, this.form.ingredients)
+    this.errors.update(current => ({ ...current, ingredient: newErrors.ingredient, quantity: newErrors.quantity }))
+    if (newErrors.ingredient || newErrors.quantity) return
 
     this.form.ingredients = [
       ...this.form.ingredients,
-      { ingredientId: this.newIngredientId, quantity: this.newIngredientQty }
+      { ingredientId: this.newIngredientId, quantity: this.newIngredientQty! }
     ]
     this.newIngredientId = ''
     this.newIngredientQty = 1

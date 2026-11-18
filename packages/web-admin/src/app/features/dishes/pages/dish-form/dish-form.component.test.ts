@@ -89,4 +89,50 @@ describe('DishFormComponent', () => {
       expect(fixture.nativeElement.querySelector(`label[for="${control.id}"]`)).not.toBeNull()
     })
   })
+
+  describe('añadir ingrediente', () => {
+    async function preparar() {
+      const ctx = configurar()
+      await ctx.fixture.whenStable()
+      ctx.fixture.detectChanges()
+      const el = ctx.fixture.nativeElement as HTMLElement
+      const select = el.querySelector('#dish-new-ingredient') as HTMLSelectElement
+      const qty = el.querySelector('#dish-new-quantity') as HTMLInputElement
+      const boton = el.querySelector('button[aria-label="Añadir ingrediente"]') as HTMLButtonElement
+      const elegir = (id: string) => { select.value = id; select.dispatchEvent(new Event('change')) }
+      const cantidad = (v: string) => { qty.value = v; qty.dispatchEvent(new Event('input')) }
+      return { ...ctx, el, select, qty, boton, elegir, cantidad }
+    }
+
+    it('el botón es un button[type=button] con aria-label', async () => {
+      const { boton } = await preparar()
+      expect(boton).not.toBeNull()
+      expect(boton.tagName).toBe('BUTTON')
+      expect(boton.getAttribute('type')).toBe('button')
+    })
+
+    it('añade el ingrediente con datos válidos', async () => {
+      const { fixture, boton, elegir, cantidad } = await preparar()
+      elegir('ing-1')
+      cantidad('3')
+      boton.click()
+      fixture.detectChanges()
+      expect(fixture.componentInstance.form.ingredients).toEqual([{ ingredientId: 'ing-1', quantity: 3 }])
+    })
+
+    it('con datos inválidos no añade y marca los campos con aria-invalid y aria-describedby', async () => {
+      const { fixture, el, select, qty, boton, cantidad } = await preparar()
+      cantidad('0')
+      boton.click()
+      fixture.detectChanges()
+
+      expect(fixture.componentInstance.form.ingredients).toEqual([])
+      expect(select.getAttribute('aria-invalid')).toBe('true')
+      expect(qty.getAttribute('aria-invalid')).toBe('true')
+      const msgSelect = el.querySelector(`#${select.getAttribute('aria-describedby')}`)
+      const msgQty = el.querySelector(`#${qty.getAttribute('aria-describedby')}`)
+      expect(msgSelect?.textContent).toContain('Selecciona un ingrediente')
+      expect(msgQty?.textContent).toContain('La cantidad debe ser mayor que 0')
+    })
+  })
 })

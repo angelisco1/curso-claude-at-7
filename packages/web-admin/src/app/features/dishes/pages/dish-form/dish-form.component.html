@@ -64,18 +64,32 @@
       }
 
       <div class="add-ingredient-row">
-        <label for="dish-new-ingredient" class="sr-only">Ingrediente</label>
-        <select id="dish-new-ingredient" class="form-control" [(ngModel)]="newIngredientId" name="newIngredientId">
-          <option value="">Seleccionar ingrediente</option>
-          @for (i of ingredientStore.ingredients(); track i.id) {
-            <option [value]="i.id">{{ i.name }} ({{ i.unit }})</option>
+        <div class="add-field add-field-grow">
+          <label for="dish-new-ingredient" class="sr-only">Ingrediente</label>
+          <select id="dish-new-ingredient" class="form-control" [(ngModel)]="newIngredientId" name="newIngredientId"
+            [attr.aria-invalid]="errors().ingredient ? 'true' : null"
+            [attr.aria-describedby]="errors().ingredient ? 'dish-new-ingredient-error' : null">
+            <option value="">Seleccionar ingrediente</option>
+            @for (i of ingredientStore.ingredients(); track i.id) {
+              <option [value]="i.id">{{ i.name }} ({{ i.unit }})</option>
+            }
+          </select>
+          @if (errors().ingredient) {
+            <p class="field-error" id="dish-new-ingredient-error">{{ errors().ingredient }}</p>
           }
-        </select>
-        <label for="dish-new-quantity" class="sr-only">Cantidad</label>
-        <input id="dish-new-quantity" type="number" class="form-control qty-input" [(ngModel)]="newIngredientQty" name="newIngredientQty" placeholder="Cant." />
-        <div class="btn btn-secondary btn-sm" (click)="addIngredient()">
-          <lucide-icon name="plus" [size]="14"></lucide-icon>
         </div>
+        <div class="add-field">
+          <label for="dish-new-quantity" class="sr-only">Cantidad</label>
+          <input id="dish-new-quantity" type="number" class="form-control qty-input" [(ngModel)]="newIngredientQty" name="newIngredientQty" placeholder="Cant."
+            [attr.aria-invalid]="errors().quantity ? 'true' : null"
+            [attr.aria-describedby]="errors().quantity ? 'dish-new-quantity-error' : null" />
+          @if (errors().quantity) {
+            <p class="field-error" id="dish-new-quantity-error">{{ errors().quantity }}</p>
+          }
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" aria-label="Añadir ingrediente" (click)="addIngredient()">
+          <lucide-icon name="plus" [size]="14"></lucide-icon>
+        </button>
       </div>
     </fieldset>
 
