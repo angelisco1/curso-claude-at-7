@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { AuthStore } from '@resttek/web-shared';
 import { OrderStore } from '../../store/order.store';
+import { orderTableLabel } from '../../models/order.model';
 
 @Component({
   selector: 'app-barra',
@@ -11,6 +12,7 @@ import { OrderStore } from '../../store/order.store';
 export class BarraComponent implements OnInit, OnDestroy {
   private readonly authStore = inject(AuthStore);
   readonly orderStore = inject(OrderStore);
+  readonly tableLabel = orderTableLabel;
 
   ngOnInit(): void {
     const restaurantId = this.authStore.user()?.restaurantId;
