@@ -26,6 +26,10 @@
           <span class="table-status status-{{ table.status }}">{{ statusLabel(table.status) }}</span>
         </header>
 
+        @if (table.status === 'reservada') {
+          <p class="reserved-by">Reservada para {{ reservedClientName(table) }}</p>
+        }
+
         <div class="table-body">
           <p class="table-capacity">{{ table.capacity }} personas</p>
           @if (table.description) {

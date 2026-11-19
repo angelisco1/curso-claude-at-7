@@ -30,3 +30,10 @@ const STATUS_LABELS: Record<TableStatus, string> = {
 export function tableStatusLabel(status: TableStatus): string {
   return STATUS_LABELS[status]
 }
+
+export const UNKNOWN_CLIENT = 'Cliente desconocido'
+
+export function clientDisplayName(clientId: string, clients: Client[]): string {
+  const client = clients.find(c => c.id === clientId)
+  return client ? `${client.firstName} ${client.lastName}` : UNKNOWN_CLIENT
+}

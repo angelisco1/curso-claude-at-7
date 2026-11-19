@@ -140,3 +140,11 @@
 .item-name {
   flex: 1;
 }
+
+.reserved-by {
+  padding: 8px 16px;
+  background: var(--yellow-glow);
+  color: var(--yellow);
+  font-size: 13px;
+  font-weight: 500;
+}

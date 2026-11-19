@@ -198,4 +198,24 @@ describe('MesasComponent', () => {
     fixture.detectChanges()
     expect(el.textContent).toContain('No se han podido cargar los clientes')
   })
+
+  describe('cabecera de la reserva', () => {
+    it('la tarjeta de una mesa reservada muestra el nombre del cliente', () => {
+      const { el } = configurar()
+      expect(tarjeta(el, 3).querySelector('.reserved-by')?.textContent).toContain('Reservada para Ana López')
+    })
+
+    it('si el cliente no está en la lista cargada muestra «Cliente desconocido»', () => {
+      const { fixture, el, tableStore } = configurar()
+      tableStore.clients.set([])
+      fixture.detectChanges()
+      expect(tarjeta(el, 3).querySelector('.reserved-by')?.textContent).toContain('Reservada para Cliente desconocido')
+    })
+
+    it('las mesas no reservadas no muestran cliente', () => {
+      const { el } = configurar()
+      expect(tarjeta(el, 1).querySelector('.reserved-by')).toBeNull()
+      expect(tarjeta(el, 2).querySelector('.reserved-by')).toBeNull()
+    })
+  })
 })

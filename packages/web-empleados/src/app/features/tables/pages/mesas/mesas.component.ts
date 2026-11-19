@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core'
 import { AuthStore } from '@resttek/web-shared'
 import { TableStore } from '../../store/table.store'
 import { OrderStore } from '../../../orders/store/order.store'
-import { Client, TABLE_STATUSES, Table, TableStatus, tableStatusLabel } from '../../models/table.model'
+import { Client, TABLE_STATUSES, Table, TableStatus, clientDisplayName, tableStatusLabel } from '../../models/table.model'
 
 @Component({
   selector: 'app-mesas',
@@ -67,6 +67,10 @@ export class MesasComponent implements OnInit, OnDestroy {
   cancelReservation(): void {
     this.reservingTableId.set(null)
     this.selectedClientId.set('')
+  }
+
+  reservedClientName(table: Table): string {
+    return clientDisplayName(table.reservedByClientId ?? '', this.tableStore.clients())
   }
 
   clientOptionLabel(client: Client): string {
