@@ -14,7 +14,14 @@ export interface Order {
   restaurantName?: string
   restaurantLogoUrl?: string | null
   tableId: string | null
+  tableNumber?: number | null
   clientId: string | null
   createdAt: string
   items: OrderItem[]
+}
+
+/** «Mesa N» con `tableNumber`; si es `null` (pedidos antiguos), con `tableId`. */
+export function orderTableLabel(order: Order): string | null {
+  const table = order.tableNumber ?? order.tableId
+  return table === null || table === undefined ? null : `Mesa ${table}`
 }
