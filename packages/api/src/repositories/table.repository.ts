@@ -22,6 +22,8 @@ export interface TableRepository {
     findById(id: string): Promise<Table | null>
     findByRestaurantId(restaurantId: string): Promise<Table[]>
     findByNumber(restaurantId: string, number: number): Promise<Table | null>
+    findAvailable(restaurantId: string, people: number, clientId: string): Promise<Table[]>
+    occupyIfFree(id: string, restaurantId: string, clientId: string): Promise<boolean>
     save(table: Table): Promise<void>
     delete(id: string): Promise<void>
 }
@@ -44,6 +46,27 @@ export class SqliteTableRepository implements TableRepository {
         const row = await this.db.get<TableRow>(`${SELECT_TABLE} WHERE restaurant_id = ? AND number = ?`, [restaurantId, number])
         if (!row) return null
         return this.mapToTable(row)
+    }
+
+    async findAvailable(restaurantId: string, people: number, clientId: string): Promise<Table[]> {
+        const rows = await this.db.all<TableRow>(
+            `${SELECT_TABLE}
+             WHERE restaurant_id = ? AND capacity >= ?
+               AND (status = 'libre' OR (status = 'reservada' AND reserved_by_client_id = ?))
+             ORDER BY capacity ASC, number ASC`,
+            [restaurantId, people, clientId]
+        )
+        return rows.map(row => this.mapToTable(row))
+    }
+
+    async occupyIfFree(id: string, restaurantId: string, clientId: string): Promise<boolean> {
+        const result = await this.db.run(
+            `UPDATE tables SET status = 'ocupada', reserved_by_client_id = NULL, updated_at = ?
+             WHERE id = ? AND restaurant_id = ?
+               AND (status = 'libre' OR (status = 'reservada' AND reserved_by_client_id = ?))`,
+            [new Date().toISOString(), id, restaurantId, clientId]
+        )
+        return result.changes > 0
     }
 
     async save(table: Table): Promise<void> {

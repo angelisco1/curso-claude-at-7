@@ -105,4 +105,68 @@ describe('SqliteTableRepository (Integration)', () => {
             expect(await repo.findByNumber('r1', 5)).toBeNull()
         })
     })
+
+    describe('disponibilidad y ocupación', () => {
+        beforeAll(async () => {
+            await db.run(
+                'INSERT INTO restaurants (id, name, address, email, phone, owner_first_name, owner_last_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                ['r3', 'Restaurante r3', 'Calle Mayor 10', 'info@r.com', '+34 612345678', 'Carlos', 'García', now, now]
+            )
+            await repo.save(buildTable({ id: 'av-1', restaurantId: 'r3', number: 1, capacity: 2 }))
+            await repo.save(buildTable({ id: 'av-2', restaurantId: 'r3', number: 2, capacity: 6 }))
+            await repo.save(buildTable({ id: 'av-3', restaurantId: 'r3', number: 3, capacity: 4 }))
+            await repo.save(buildTable({ id: 'av-4', restaurantId: 'r3', number: 4, capacity: 4, status: 'ocupada' }))
+            await repo.save(buildTable({ id: 'av-5', restaurantId: 'r3', number: 5, capacity: 4, status: 'reservada', reservedByClientId: 'cli-a' }))
+            await repo.save(buildTable({ id: 'av-6', restaurantId: 'r3', number: 6, capacity: 8, status: 'reservada', reservedByClientId: 'cli-b' }))
+            await repo.save(buildTable({ id: 'av-7', restaurantId: 'r2', number: 70, capacity: 8 }))
+        })
+
+        it('findAvailable devuelve libres con capacidad suficiente y las reservadas por el cliente, ordenadas por capacidad y número', async () => {
+            const tables = await repo.findAvailable('r3', 3, 'cli-a')
+            expect(tables.map(t => t.id)).toEqual(['av-3', 'av-5', 'av-2'])
+        })
+
+        it('findAvailable no devuelve reservadas por otro cliente, ocupadas ni de otro restaurante', async () => {
+            const tables = await repo.findAvailable('r3', 1, 'cli-c')
+            expect(tables.map(t => t.id)).toEqual(['av-1', 'av-3', 'av-2'])
+        })
+
+        it('findAvailable devuelve [] si ninguna mesa tiene capacidad suficiente', async () => {
+            expect(await repo.findAvailable('r3', 20, 'cli-a')).toEqual([])
+        })
+
+        it('occupyIfFree ocupa una mesa libre y la segunda vez devuelve false', async () => {
+            expect(await repo.occupyIfFree('av-1', 'r3', 'cli-c')).toBe(true)
+
+            const occupied = await repo.findById('av-1')
+            expect(occupied?.status).toBe('ocupada')
+            expect(occupied?.reservedByClientId).toBeNull()
+            expect(occupied?.updatedAt).not.toBe(now)
+
+            expect(await repo.occupyIfFree('av-1', 'r3', 'cli-c')).toBe(false)
+        })
+
+        it('occupyIfFree ocupa una reservada por el mismo cliente y limpia reservedByClientId', async () => {
+            expect(await repo.occupyIfFree('av-5', 'r3', 'cli-a')).toBe(true)
+
+            const occupied = await repo.findById('av-5')
+            expect(occupied?.status).toBe('ocupada')
+            expect(occupied?.reservedByClientId).toBeNull()
+        })
+
+        it('occupyIfFree devuelve false sin cambios para una reservada por otro cliente', async () => {
+            expect(await repo.occupyIfFree('av-6', 'r3', 'cli-a')).toBe(false)
+
+            const table = await repo.findById('av-6')
+            expect(table?.status).toBe('reservada')
+            expect(table?.reservedByClientId).toBe('cli-b')
+            expect(table?.updatedAt).toBe(now)
+        })
+
+        it('occupyIfFree devuelve false si la mesa es de otro restaurante o no existe', async () => {
+            expect(await repo.occupyIfFree('av-7', 'r3', 'cli-a')).toBe(false)
+            expect((await repo.findById('av-7'))?.status).toBe('libre')
+            expect(await repo.occupyIfFree('no-existe', 'r3', 'cli-a')).toBe(false)
+        })
+    })
 })
