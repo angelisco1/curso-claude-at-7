@@ -1,0 +1,97 @@
+<div class="fade-in">
+  <div class="page-header">
+    <div class="header-back">
+      <a [routerLink]="listUrl" class="back-link" aria-label="Volver al listado de mesas">
+        <lucide-icon aria-hidden="true" name="chevron-left" [size]="18"></lucide-icon>
+      </a>
+      <h1 class="page-title">{{ pageTitle }}</h1>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert-error" role="alert">{{ error() }}</div>
+  }
+
+  @if (summaryItems().length > 0) {
+    <div class="error-summary alert-error" role="alert">
+      <p class="error-summary-title">
+        @if (summaryItems().length === 1) { Hay 1 error en el formulario: } @else { Hay {{ summaryItems().length }} errores en el formulario: }
+      </p>
+      <ul>
+        @for (item of summaryItems(); track item.targetId) {
+          <li><a [href]="'#' + item.targetId" (click)="focusField(item.targetId, $event)">{{ item.message }}</a></li>
+        }
+      </ul>
+    </div>
+  }
+
+  <form class="card form-card" (ngSubmit)="onSubmit()" novalidate>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="table-number">Número de mesa</label>
+        <input id="table-number" type="number" min="1" step="1" class="form-control" [(ngModel)]="form.number" (ngModelChange)="revalidate()" name="number"
+          [attr.aria-invalid]="errors().number ? 'true' : null"
+          [attr.aria-describedby]="errors().number ? 'table-number-error' : null" />
+        @if (errors().number) {
+          <p class="field-error" id="table-number-error">{{ errors().number }}</p>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="table-capacity">Capacidad (personas)</label>
+        <input id="table-capacity" type="number" min="1" step="1" class="form-control" [(ngModel)]="form.capacity" (ngModelChange)="revalidate()" name="capacity"
+          [attr.aria-invalid]="errors().capacity ? 'true' : null"
+          [attr.aria-describedby]="errors().capacity ? 'table-capacity-error' : null" />
+        @if (errors().capacity) {
+          <p class="field-error" id="table-capacity-error">{{ errors().capacity }}</p>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="table-status">Estado</label>
+        <select id="table-status" class="form-control" [(ngModel)]="form.status" (ngModelChange)="revalidate()" name="status">
+          @for (s of statuses; track s) {
+            <option [value]="s">{{ statusLabel(s) }}</option>
+          }
+        </select>
+      </div>
+
+      @if (form.status === 'reservada') {
+        <div class="form-group">
+          <label for="table-client">Cliente de la reserva</label>
+          <select id="table-client" class="form-control" [(ngModel)]="form.reservedByClientId" (ngModelChange)="revalidate()" name="reservedByClientId"
+            aria-required="true"
+            [attr.aria-invalid]="errors().reservedByClientId ? 'true' : null"
+            [attr.aria-describedby]="errors().reservedByClientId ? 'table-client-error' : (store.clientsError() ? 'table-client-warning' : null)">
+            <option value="">Seleccionar cliente</option>
+            @for (c of store.clients(); track c.id) {
+              <option [value]="c.id">{{ clientOptionLabel(c) }}</option>
+            }
+          </select>
+          @if (errors().reservedByClientId) {
+            <p class="field-error" id="table-client-error">{{ errors().reservedByClientId }}</p>
+          }
+          @if (store.clientsError()) {
+            <p class="field-error" id="table-client-warning">{{ store.clientsError() }}</p>
+          }
+        </div>
+      }
+
+      <div class="form-group form-full">
+        <label for="table-description">Descripción (opcional)</label>
+        <textarea id="table-description" class="form-control" [(ngModel)]="form.description" name="description" rows="3" placeholder="Terraza, junto a la ventana..."></textarea>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a class="btn btn-secondary" [routerLink]="listUrl">Cancelar</a>
+      <button type="submit" class="btn btn-primary" [attr.aria-busy]="loading()">
+        @if (loading()) {
+          Guardando...
+        } @else {
+          Guardar
+        }
+      </button>
+    </div>
+  </form>
+</div>
