@@ -252,4 +252,152 @@ describe('Rutas de mesas', () => {
             expect(res.status).toBe(403)
         })
     })
+    describe('PATCH /:id/status', () => {
+        beforeEach(async () => {
+            await insertTable({ id: 't1', number: 1 })
+        })
+
+        it.each([['admin', admin], ['manager', manager], ['camarero', camarero]])('cambia el estado como %s (200)', async (_rol, token) => {
+            const res = await request(app).patch(`${base()}/t1/status`).set('Authorization', token).send({ status: 'ocupada' })
+
+            expect(res.status).toBe(200)
+            expect(res.body).toMatchObject({ id: 't1', status: 'ocupada', reservedByClientId: null })
+        })
+
+        it('reserva para un cliente y libera limpiando el cliente', async () => {
+            const reserved = await request(app).patch(`${base()}/t1/status`).set('Authorization', camarero)
+                .send({ status: 'reservada', reservedByClientId: 'cliente-1' })
+            expect(reserved.status).toBe(200)
+            expect(reserved.body.reservedByClientId).toBe('cliente-1')
+
+            const freed = await request(app).patch(`${base()}/t1/status`).set('Authorization', camarero).send({ status: 'libre' })
+            expect(freed.status).toBe(200)
+            expect(freed.body.reservedByClientId).toBeNull()
+        })
+
+        it.each([['cliente', cliente], ['cocinero', cocinero]])('responde 403 como %s', async (_rol, token) => {
+            const res = await request(app).patch(`${base()}/t1/status`).set('Authorization', token).send({ status: 'ocupada' })
+            expect(res.status).toBe(403)
+        })
+
+        it('responde 400 InvalidTableStatusError con un estado inválido o sin cuerpo', async () => {
+            const invalid = await request(app).patch(`${base()}/t1/status`).set('Authorization', camarero).send({ status: 'rota' })
+            expect(invalid.status).toBe(400)
+            expect(invalid.body).toEqual({ error: 'InvalidTableStatusError', message: 'Estado de mesa inválido. Debe ser libre, ocupada o reservada' })
+
+            const empty = await request(app).patch(`${base()}/t1/status`).set('Authorization', camarero)
+            expect(empty.status).toBe(400)
+            expect(empty.body.error).toBe('InvalidTableStatusError')
+        })
+
+        it('responde 400 InvalidReservationClientError si reserva sin cliente', async () => {
+            const res = await request(app).patch(`${base()}/t1/status`).set('Authorization', camarero).send({ status: 'reservada' })
+
+            expect(res.status).toBe(400)
+            expect(res.body).toEqual({ error: 'InvalidReservationClientError', message: 'Una mesa reservada necesita un cliente válido' })
+        })
+
+        it('responde 404 si la mesa es de otro restaurante', async () => {
+            const res = await request(app).patch(`${base('r2')}/t1/status`).set('Authorization', camarero).send({ status: 'ocupada' })
+
+            expect(res.status).toBe(404)
+            expect(res.body.error).toBe('TableNotFoundError')
+        })
+    })
+
+    describe('GET /available', () => {
+        beforeEach(async () => {
+            await insertTable({ id: 'pequena', number: 1, capacity: 2 })
+            await insertTable({ id: 'grande', number: 2, capacity: 6 })
+            await insertTable({ id: 'mediana', number: 3, capacity: 4 })
+            await insertTable({ id: 'ocupada', number: 4, capacity: 4, status: 'ocupada' })
+            await insertTable({ id: 'mia', number: 5, capacity: 4, status: 'reservada', reservedByClientId: 'cliente-1' })
+            await insertTable({ id: 'ajena', number: 6, capacity: 8, status: 'reservada', reservedByClientId: 'cliente-2' })
+            await insertTable({ id: 'otro-rest', restaurantId: 'r2', number: 1, capacity: 8 })
+        })
+
+        it('devuelve al cliente las libres con capacidad suficiente y sus reservadas, ordenadas por capacidad y número', async () => {
+            const res = await request(app).get(`${base()}/available?people=3`).set('Authorization', cliente)
+
+            expect(res.status).toBe(200)
+            expect(res.body.map((t: { id: string }) => t.id)).toEqual(['mediana', 'mia', 'grande'])
+            expect(res.body[0]).toMatchObject({ restaurantId: 'r1', number: 3, capacity: 4, status: 'libre' })
+        })
+
+        it('está disponible para cualquier rol autenticado', async () => {
+            const res = await request(app).get(`${base()}/available?people=1`).set('Authorization', cocinero)
+
+            expect(res.status).toBe(200)
+            expect(res.body.map((t: { id: string }) => t.id)).toEqual(['pequena', 'mediana', 'grande'])
+        })
+
+        it('devuelve [] si no hay mesas con capacidad suficiente', async () => {
+            const res = await request(app).get(`${base()}/available?people=20`).set('Authorization', cliente)
+
+            expect(res.status).toBe(200)
+            expect(res.body).toEqual([])
+        })
+
+        it.each([[''], ['?people='], ['?people=0'], ['?people=-1'], ['?people=2.5'], ['?people=abc'], ['?people=2&people=3']])(
+            'responde 400 InvalidPeopleCountError con %o',
+            async (query) => {
+                const res = await request(app).get(`${base()}/available${query}`).set('Authorization', cliente)
+
+                expect(res.status).toBe(400)
+                expect(res.body).toEqual({ error: 'InvalidPeopleCountError', message: 'El número de personas debe ser un entero mayor que 0' })
+            }
+        )
+
+        it('responde 401 sin token', async () => {
+            const res = await request(app).get(`${base()}/available?people=2`)
+            expect(res.status).toBe(401)
+        })
+    })
+
+    describe('POST /:id/occupy', () => {
+        beforeEach(async () => {
+            await insertTable({ id: 'libre', number: 1 })
+            await insertTable({ id: 'mia', number: 2, status: 'reservada', reservedByClientId: 'cliente-1' })
+            await insertTable({ id: 'ajena', number: 3, status: 'reservada', reservedByClientId: 'cliente-2' })
+            await insertTable({ id: 'otro-rest', restaurantId: 'r2', number: 1 })
+        })
+
+        it('ocupa una mesa libre (200) y la segunda vez responde 400 TableNotAvailableError', async () => {
+            const first = await request(app).post(`${base()}/libre/occupy`).set('Authorization', cliente)
+            expect(first.status).toBe(200)
+            expect(first.body).toMatchObject({ id: 'libre', status: 'ocupada', reservedByClientId: null })
+
+            const second = await request(app).post(`${base()}/libre/occupy`).set('Authorization', cliente)
+            expect(second.status).toBe(400)
+            expect(second.body).toEqual({ error: 'TableNotAvailableError', message: 'La mesa ya no está disponible' })
+        })
+
+        it('ocupa una mesa reservada por el propio cliente', async () => {
+            const res = await request(app).post(`${base()}/mia/occupy`).set('Authorization', cliente)
+
+            expect(res.status).toBe(200)
+            expect(res.body).toMatchObject({ id: 'mia', status: 'ocupada', reservedByClientId: null })
+        })
+
+        it('responde 400 TableNotAvailableError con una reservada por otro cliente', async () => {
+            const res = await request(app).post(`${base()}/ajena/occupy`).set('Authorization', cliente)
+
+            expect(res.status).toBe(400)
+            expect(res.body.error).toBe('TableNotAvailableError')
+        })
+
+        it('responde 404 si no existe o es de otro restaurante, sin ocuparla', async () => {
+            expect((await request(app).post(`${base()}/no-existe/occupy`).set('Authorization', cliente)).status).toBe(404)
+
+            const res = await request(app).post(`${base('r1')}/otro-rest/occupy`).set('Authorization', cliente)
+            expect(res.status).toBe(404)
+            expect(res.body).toEqual({ error: 'TableNotFoundError', message: 'Mesa no encontrada' })
+            expect(await dbConfig.get('SELECT status FROM tables WHERE id = ?', ['otro-rest'])).toEqual({ status: 'libre' })
+        })
+
+        it.each([['admin', admin], ['camarero', camarero]])('responde 403 como %s', async (_rol, token) => {
+            const res = await request(app).post(`${base()}/libre/occupy`).set('Authorization', token)
+            expect(res.status).toBe(403)
+        })
+    })
 })

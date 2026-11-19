@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
+import type { AuthRequest } from '@shared/infrastructure/http/middlewares.js'
 import type { TableService } from '@services/table.service.js'
 import type { Table } from '@models/table.model.js'
 
@@ -61,6 +62,37 @@ export class TableController {
         try {
             await this.tableService.delete(req.params.restaurantId as string, req.params.id as string)
             res.status(204).send()
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    changeStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const body = req.body ?? {}
+            const table = await this.tableService.changeStatus(req.params.restaurantId as string, req.params.id as string, {
+                status: body.status,
+                reservedByClientId: body.reservedByClientId
+            })
+            res.status(200).json(this.toJSON(table))
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    getAvailable = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const tables = await this.tableService.findAvailable(req.params.restaurantId as string, req.query.people, req.user.id)
+            res.status(200).json(tables.map(t => this.toJSON(t)))
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    occupy = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const table = await this.tableService.occupy(req.params.restaurantId as string, req.params.id as string, req.user.id)
+            res.status(200).json(this.toJSON(table))
         } catch (error) {
             next(error)
         }
