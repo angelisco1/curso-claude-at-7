@@ -55,7 +55,6 @@ button {
   font-family: inherit;
   cursor: pointer;
   border: none;
-  outline: none;
   font-size: inherit;
 }
 
@@ -133,7 +132,6 @@ input, select, textarea {
 }
 
 .form-control:focus {
-  outline: none;
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px var(--green-glow);
 }
@@ -261,4 +259,13 @@ table tr:hover td {
 .actions {
   display: flex;
   gap: 8px;
+}
+
+/* Indicador de foco visible (WCAG 2.4.7 / 2.4.11): contraste >= 3:1 con el fondo */
+button:focus-visible,
+a:focus-visible,
+.btn:focus-visible,
+.form-control:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
 }

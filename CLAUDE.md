@@ -17,7 +17,8 @@ npm run dev:api            # API en :3000 (tsx watch); health: /health
 npm run dev:admin          # web-admin :4200
 npm run dev:empleados      # web-empleados :4201
 npm run dev:clientes       # web-clientes :4202
-npm test                   # solo tests de la API (vitest run)
+npm test                   # tests de la API (vitest run) + unitarios de web-admin
+npm run test:admin         # solo los unitarios de web-admin (@angular/build:unit-test + Vitest + jsdom)
 ```
 
 Un solo test de la API:
@@ -27,7 +28,7 @@ npm run test -w @resttek/api -- src/services/order.service.test.ts
 npm run test -w @resttek/api -- -t "nombre del test"
 ```
 
-Los frontends no tienen tests configurados ni script de lint; `ng build` está disponible con `npm run build -w @resttek/web-admin` (etc.). Los frontends hacen proxy de `/api` a `localhost:3000` vía `proxy.conf.json`.
+Solo `web-admin` tiene tests unitarios de frontend (`*.test.ts` junto al código); `web-empleados` y `web-clientes` no tienen tests ni hay script de lint; `ng build` está disponible con `npm run build -w @resttek/web-admin` (etc.). Los frontends hacen proxy de `/api` a `localhost:3000` vía `proxy.conf.json`.
 
 Credenciales de prueba tras el seed: la contraseña es el propio email (p. ej. `admin@resttek.com`, `gerente1@resttek.com`, `cocinero1@resttek.com`, `camarero1@resttek.com`, `cliente1@resttek.com`).
 

@@ -392,3 +392,34 @@ El sistema de diseño es **dark mode** e incluye:
 > | `web-empleados/src/styles.css` | copia con 46 líneas propias añadidas |
 >
 > En la práctica hay **cuatro copias del design system** y el fichero de `web-shared` es código muerto. Al tocar un estilo común hay que replicarlo en las tres apps, o se desincronizan.
+## Tests y accesibilidad (web-admin)
+
+Solo `web-admin` tiene tests de frontend. Hay dos capas con responsabilidades distintas:
+
+| Capa | Herramienta | Ficheros | Qué cubre |
+| --- | --- | --- | --- |
+| Unitarios | `@angular/build:unit-test` + Vitest + jsdom | `src/**/*.test.ts` (junto al código) | Funciones de validación y marcado accesible del componente (labels, roles, ARIA, foco tras validar) |
+| E2E | Playwright + `@axe-core/playwright` | `packages/web-admin/e2e/*.spec.ts` | Lo que necesita un navegador real: teclado, orden de tabulación, foco visible calculado, axe (WCAG 2.2 AA) y vídeo |
+
+### Cómo lanzarlos
+
+Desde la raíz:
+
+```bash
+npm run test:admin   # unitarios de web-admin
+npm test             # API + unitarios de web-admin
+npm run e2e          # E2E de Playwright
+npm run e2e:video    # regenera el vídeo del flujo con teclado
+```
+
+`npm run e2e` no necesita las apps arrancadas: Playwright ejecuta `npm run seed`, levanta la API (`:3000`) y `web-admin` (`:4200`) y, en local, reutiliza los servidores que ya estén en marcha (`reuseExistingServer`). Si los E2E fallan por timeouts de login, comprueba que no queda una API antigua colgada en `:3000`. La primera vez hay que instalar el navegador con `npx playwright install chromium`.
+
+Para lanzar un solo E2E: `npm run e2e -w @resttek/web-admin -- dish-form.a11y`.
+
+### Vídeo del flujo con teclado
+
+`e2e/dish-form.keyboard-video.spec.ts` graba (con `slowMo` y pausas entre pasos) cómo se envía el formulario de platos vacío —con sus errores— y cómo se crea después un plato usando solo el teclado. El vídeo versionado es [`packages/web-admin/e2e/videos/dish-form-teclado.webm`](../../packages/web-admin/e2e/videos/dish-form-teclado.webm).
+
+Solo se regenera con `npm run e2e:video` (variable `GRABAR_VIDEO=1`); un `npm run e2e` normal ejecuta el flujo pero no sobrescribe el fichero del repo. Tras regenerarlo, súbelo en el mismo commit que el cambio que lo motivó.
+
+> En macOS la flecha sobre un `select` cerrado solo abre el desplegable en Chromium, así que el helper `elegir_opcion_con_teclado` recurre a escribir el comienzo de la opción cuando el valor no cambia.
