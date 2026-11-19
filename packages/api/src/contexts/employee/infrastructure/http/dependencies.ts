@@ -6,15 +6,19 @@ import { BcryptAuthService } from '@employee/infrastructure/BcryptAuthService.js
 import { LoginUseCase } from '@employee/application/LoginUseCase.js'
 import { CreateEmployeeUseCase } from '@employee/application/CreateEmployeeUseCase.js'
 import { RegisterClientUseCase } from '@employee/application/RegisterClientUseCase.js'
+import { ListClientsUseCase } from '@employee/application/ListClientsUseCase.js'
+import { ClientController } from '@employee/infrastructure/http/ClientController.js'
 
 const employeeRepository = new SqliteEmployeeRepository(dbConfig)
 const authService = new BcryptAuthService()
 const loginUseCase = new LoginUseCase(employeeRepository, authService)
 const createEmployeeUseCase = new CreateEmployeeUseCase(employeeRepository, authService)
 const registerClientUseCase = new RegisterClientUseCase(employeeRepository, authService)
+const listClientsUseCase = new ListClientsUseCase(employeeRepository)
 
 export const authController = new AuthController(loginUseCase, registerClientUseCase)
 export const employeeController = new EmployeeController(
     createEmployeeUseCase,
     employeeRepository
 )
+export const clientController = new ClientController(listClientsUseCase)
