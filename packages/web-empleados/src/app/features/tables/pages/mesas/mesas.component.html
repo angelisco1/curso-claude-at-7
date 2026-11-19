@@ -1,0 +1,101 @@
+<div class="page-header">
+  <h1>Mesas</h1>
+</div>
+
+@if (tableStore.error()) {
+  <div class="alert-error" role="alert">{{ tableStore.error() }}</div>
+}
+
+@if (tableStore.clientsError()) {
+  <div class="alert-warning" role="status">{{ tableStore.clientsError() }}</div>
+}
+
+@if (tableStore.loading() && tableStore.tables().length === 0) {
+  <div class="spinner" aria-label="Cargando mesas"></div>
+} @else if (tableStore.tables().length === 0) {
+  <div class="empty-state">
+    <p>No hay mesas en este restaurante</p>
+  </div>
+} @else {
+  <div class="tables-grid">
+    @for (entry of tableStore.tablesWithOrders(); track entry.table.id) {
+      @let table = entry.table;
+      <article class="table-card" [attr.data-table-number]="table.number" [attr.aria-labelledby]="'table-title-' + table.id">
+        <header class="table-header">
+          <h2 class="table-title" [id]="'table-title-' + table.id">Mesa {{ table.number }}</h2>
+          <span class="table-status status-{{ table.status }}">{{ statusLabel(table.status) }}</span>
+        </header>
+
+        <div class="table-body">
+          <p class="table-capacity">{{ table.capacity }} personas</p>
+          @if (table.description) {
+            <p class="table-description">{{ table.description }}</p>
+          }
+
+          <div class="field">
+            <label [for]="'status-' + table.id">Estado de la mesa {{ table.number }}</label>
+            <select
+              class="status-select"
+              [id]="'status-' + table.id"
+              [value]="selectedStatus(table)"
+              (change)="onStatusChange(table, $event)">
+              @for (status of statuses; track status) {
+                <option [value]="status" [selected]="status === selectedStatus(table)">{{ statusLabel(status) }}</option>
+              }
+            </select>
+          </div>
+
+          @if (reservingTableId() === table.id) {
+            <div class="reservation-form">
+              <div class="field">
+                <label [for]="'client-' + table.id">Cliente de la reserva</label>
+                <select
+                  class="client-select"
+                  [id]="'client-' + table.id"
+                  [value]="selectedClientId()"
+                  (change)="onClientChange($event)">
+                  <option value="" [selected]="selectedClientId() === ''">Selecciona un cliente</option>
+                  @for (client of tableStore.clients(); track client.id) {
+                    <option [value]="client.id" [selected]="client.id === selectedClientId()">{{ clientOptionLabel(client) }}</option>
+                  }
+                </select>
+              </div>
+              <div class="reservation-actions">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-primary confirm-reservation"
+                  [disabled]="!selectedClientId()"
+                  (click)="confirmReservation(table)">
+                  Reservar
+                </button>
+                <button type="button" class="btn btn-sm btn-secondary cancel-reservation" (click)="cancelReservation()">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          }
+
+          @if (table.status === 'ocupada') {
+            <section class="table-orders" [attr.aria-label]="'Pedidos de la mesa ' + table.number">
+              @if (entry.orders.length === 0) {
+                <p class="no-orders">Sin pedidos activos</p>
+              } @else {
+                <ul class="table-order-items">
+                  @for (order of entry.orders; track order.id) {
+                    @for (item of order.items; track item.id) {
+                      <li class="table-order-item">
+                        <span class="item-quantity">{{ item.quantity }}x</span>
+                        <span class="item-name">{{ item.dishName || 'Producto' }}</span>
+                        <span class="badge badge-{{ item.status }}">{{ item.status }}</span>
+                      </li>
+                    }
+                  }
+                </ul>
+              }
+            </section>
+          }
+        </div>
+      </article>
+    }
+  </div>
+}
