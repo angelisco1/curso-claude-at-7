@@ -1,3 +1,4 @@
+<!-- resttek-plan -->
 # Plan: {{TITULO_DE_LA_FEATURE}}
 
 ## Metadatos
@@ -26,16 +27,39 @@
 
 ## Contexto
 
-{{Situación actual del código y del dominio relevante para la feature: archivos, capas (routes, controllers, services, repositories), endpoints o tablas afectadas, convenciones del proyecto que aplican, enlaces a docs relevantes (por ejemplo `docs/api/api-pagination.md`).}}
+{{Situación actual del código y del dominio relevante para la feature: archivos, capas (routes, controllers, services, repositories), endpoints o tablas afectadas, convenciones del proyecto que aplican, enlaces a docs relevantes (por ejemplo `docs/arquitectura/arquitectura-api.md`).}}
+
+## Contrato compartido
+
+> Solo si hay más de una sección que depende de la misma interfaz (endpoint, DTO, evento, componente de `web-shared`). Es lo que permite que las secciones se implementen en paralelo sin esperarse. Si hay una sola sección, escribe "No aplica".
+
+- {{Ej.: `GET /api/v1/restaurants/:id/dishes?page=1&limit=10` → `200 { data: Dish[], total: number }`}}
+
+## Secciones y dependencias
+
+> Cada sección es una unidad de trabajo para **un agente**, en su propio worktree y su propia rama (`<rama sugerida>-<sección>`). Las secciones no deben tocar los mismos archivos.
+
+| Sección | Ámbito (paquete / carpetas) | Depende de | Tareas |
+| --- | --- | --- | --- |
+| `{{api}}` | `packages/api` | — | {{API-1 … API-n}} |
+| `{{web-admin}}` | `packages/web-admin` | — (usa el contrato compartido) | {{ADMIN-1 … ADMIN-n}} |
 
 ## Tareas
 
-> Cada tarea dura entre 5 y 10 minutos e incluye los tests (TDD: primero el test en rojo) y el código mínimo para que pasen. Marca el checkbox al terminarla.
+> Cada tarea dura entre 5 y 10 minutos e incluye los tests (TDD: primero el test en rojo) y el código mínimo para que pasen. El checkbox lo marca quien coordina la implementación al integrar la sección. Las tareas de una sección van en orden; las de secciones distintas son independientes entre sí salvo lo indicado en "Depende de".
 
-- [ ] **Tarea 1: {{título corto}}**
-  - Tests: {{qué casos se escriben primero y en qué archivo de `tests/`}}
+### Sección `{{api}}` — {{API}} (`packages/api`)
+
+- [ ] **API-1: {{título corto}}**
+  - Tests: {{qué casos se escriben primero y en qué archivo `*.test.ts`}}
   - Código: {{qué se implementa para que pasen, y en qué archivo/capa}}
-- [ ] **Tarea 2: {{título corto}}**
+- [ ] **API-2: {{título corto}}**
+  - Tests: {{...}}
+  - Código: {{...}}
+
+### Sección `{{web-admin}}` — {{Web admin}} (`packages/web-admin`)
+
+- [ ] **ADMIN-1: {{título corto}}**
   - Tests: {{...}}
   - Código: {{...}}
 
@@ -45,10 +69,11 @@
 - [ ] {{Criterio verificable 2}}
 - [ ] Todos los tests pasan con `npm test`
 - [ ] Todas las tareas del plan están marcadas
+- [ ] Si se modifica la API, la documentación OpenAPI de `docs/api/` está actualizada y generada con Redocly
 
 ## Dudas abiertas
 
-> Preguntas que necesito que respondas antes o durante la implementación.
+> Preguntas que necesito que respondas antes o durante la implementación. Responde con un comentario en la issue o edita este comentario.
 
 - [ ] **D1:** {{Pregunta}} — _Respuesta:_
 
