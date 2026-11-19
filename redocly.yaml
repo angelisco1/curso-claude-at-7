@@ -1,0 +1,9 @@
+# Configuración de Redocly CLI para el linter de la documentación OpenAPI (docs/api/).
+# Se ejecuta en CI (.github/workflows/ci.yml) y en local con:
+#   npx @redocly/cli lint "docs/api/*.openapi.yml"
+extends:
+  - recommended
+
+rules:
+  # Los OpenAPI documentan el servidor local de desarrollo (http://localhost:3000/api/v1) a propósito.
+  no-server-example.com: off
