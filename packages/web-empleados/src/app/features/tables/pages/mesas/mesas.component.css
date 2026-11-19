@@ -1,0 +1,150 @@
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.alert-warning {
+  background: var(--yellow-glow);
+  color: var(--yellow);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+
+.tables-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.table-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.table-header {
+  padding: 14px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.table-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.table-status {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-libre {
+  background: var(--green-glow);
+  color: var(--green-light);
+}
+
+.status-ocupada {
+  background: var(--red-glow);
+  color: var(--red);
+}
+
+.status-reservada {
+  background: var(--yellow-glow);
+  color: var(--yellow);
+}
+
+.table-body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.table-capacity,
+.table-description {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.field select {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+}
+
+.field select:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+
+.reservation-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.table-orders {
+  border-top: 1px solid var(--border-color);
+  padding-top: 10px;
+}
+
+.no-orders {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.table-order-items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.table-order-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.item-name {
+  flex: 1;
+}
+
+.reserved-by {
+  padding: 8px 16px;
+  background: var(--yellow-glow);
+  color: var(--yellow);
+  font-size: 13px;
+  font-weight: 500;
+}

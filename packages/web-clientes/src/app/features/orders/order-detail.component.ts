@@ -3,7 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router'
 import { DecimalPipe, DatePipe, NgClass } from '@angular/common'
 import { LucideAngularModule } from 'lucide-angular'
 import { OrderService } from '../../core/services/order.service'
-import { Order, OrderItem } from '../../core/models/order.model'
+import { Order, OrderItem, orderTableLabel } from '../../core/models/order.model'
 
 @Component({
   selector: 'app-order-detail',
@@ -32,6 +32,9 @@ import { Order, OrderItem } from '../../core/models/order.model'
               <lucide-icon name="utensils" [size]="24"></lucide-icon>
             }
             <span>{{ order()!.restaurantName || 'RestTek' }}</span>
+            @if (tableLabel(order()!); as table) {
+              <span class="order-table">{{ table }}</span>
+            }
           </div>
           
           <div class="ticket-divider"></div>
@@ -96,6 +99,11 @@ import { Order, OrderItem } from '../../core/models/order.model'
       color: var(--green-light);
       font-size: 18px;
       font-weight: 700;
+    }
+    .ticket-header .order-table {
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 600;
     }
     .ticket-logo {
       width: 24px;
@@ -181,6 +189,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   readonly order = signal<Order | null>(null)
   readonly loading = signal(true)
   readonly error = signal<string | null>(null)
+  readonly tableLabel = orderTableLabel
 
   ngOnInit(): void {
     const orderId = this.route.snapshot.paramMap.get('id')!

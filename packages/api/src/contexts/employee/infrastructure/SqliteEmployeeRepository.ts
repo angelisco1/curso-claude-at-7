@@ -62,6 +62,15 @@ export class SqliteEmployeeRepository implements IEmployeeRepository {
         return rows.map(row => this.mapToDomain(row))
     }
 
+    // Sin paginación: alimenta el selector de cliente al reservar mesas
+    async findAllClients(): Promise<Employee[]> {
+        const rows = await this.db.all<any>(
+            "SELECT id, first_name as firstName, last_name as lastName, email, password_hash as passwordHash, role, restaurant_id as restaurantId FROM employees WHERE role = 'cliente' ORDER BY last_name, first_name, email",
+            []
+        )
+        return rows.map(row => this.mapToDomain(row))
+    }
+
     async delete(id: string): Promise<void> {
         await this.db.run('DELETE FROM employees WHERE id = ?', [id])
     }

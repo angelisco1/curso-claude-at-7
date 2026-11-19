@@ -51,7 +51,7 @@ contexts/employee/
 
 `contexts/shared/` no es un bounded context de negocio: contiene el value object `Email` y los middlewares y el `errorHandler` de Express.
 
-### 2. Por capas → `restaurant`, `dish`, `ingredient`, `order`
+### 2. Por capas → `restaurant`, `dish`, `ingredient`, `order`, `table`
 
 El resto de dominios **no** usan bounded contexts. Se organizan en carpetas transversales por tipo de fichero:
 
@@ -66,7 +66,7 @@ src/
 
 Con un fichero por dominio en cada carpeta: `models/dish.model.ts`, `services/dish.service.ts`, `repositories/dish.repository.ts`, etc.
 
-**Diferencia clave**: aquí no hay entidades de dominio con comportamiento. `Restaurant`, `Dish`, `Ingredient` y `Order` son `interface` planas; la validación vive en los servicios y en funciones sueltas del modelo.
+**Diferencia clave**: aquí no hay entidades de dominio con comportamiento. `Restaurant`, `Dish`, `Ingredient`, `Order` y `Table` son `interface` planas; la validación vive en los servicios y en funciones sueltas del modelo.
 
 ---
 
@@ -122,6 +122,7 @@ Los demás conceptos que podrían ser Value Objects **no están implementados co
 | Unidad de ingrediente | `normalizeIngredientUnit()` en `models/ingredient.model.ts` | kg, g, l, ml, unidad |
 | Categoría de plato | `normalizeDishCategory()` en `models/dish.model.ts` | entrante, principal, postre, bebida |
 | Estado de pedido | `normalizeOrderStatus()` en `models/order.model.ts` | pendiente, preparando, listo, entregado |
+| Estado de mesa | `normalizeTableStatus()` en `models/table.model.ts` | libre, ocupada, reservada |
 | Teléfono | `PHONE_REGEX` dentro de `services/restaurant.service.ts` | `/^\+?[\d\s\-()]{7,20}$/` |
 
 Las funciones `normalizeX()` hacen `trim()` + `toLowerCase()` y lanzan el error de dominio correspondiente si el valor no es válido.
@@ -147,13 +148,14 @@ export class SqliteRestaurantRepository implements RestaurantRepository { /* ...
 
 ### Casos de Uso (solo `employee`)
 
-Clase con un único método `execute()`. Dependencias por **inyección de constructor**. Solo hay tres:
+Clase con un único método `execute()`. Dependencias por **inyección de constructor**. Hay cuatro:
 
 | Caso de uso | Qué hace |
 | --- | --- |
 | `LoginUseCase` | Valida credenciales y devuelve `{ token, employee }` |
 | `CreateEmployeeUseCase` | Alta de empleado por parte de un admin |
 | `RegisterClientUseCase` | Auto-registro de cliente; fuerza `role: 'cliente'` y `restaurantId: null`, y devuelve token |
+| `ListClientsUseCase` | Lista todos los usuarios con rol `cliente` (`IEmployeeRepository.findAllClients()`, sin paginación), sin `passwordHash` |
 
 ```tsx
 export class CreateEmployeeUseCase {
@@ -177,7 +179,7 @@ export class CreateEmployeeUseCase {
 
 ### Servicios (resto de dominios)
 
-En `restaurant`, `dish`, `ingredient` y `order` el equivalente al caso de uso es un **servicio con varios métodos**, no una clase por acción:
+En `restaurant`, `dish`, `ingredient`, `order` y `table` el equivalente al caso de uso es un **servicio con varios métodos**, no una clase por acción:
 
 ```tsx
 export class RestaurantService {
@@ -292,6 +294,9 @@ Todos cuelgan de `/api/v1`. La columna **Roles** indica qué valores de `req.use
 | `GET` | `/api/v1/employees` | admin — acepta `?limit=`, `?offset=` y `?role=` |
 | `GET` | `/api/v1/employees/:id` | admin |
 | `GET` | `/api/v1/restaurants/:restaurantId/employees` | admin |
+| `GET` | `/api/v1/clients` | admin, manager, camarero — todos los clientes `{ id, firstName, lastName, email }`, ordenados por apellido, nombre y email |
+
+`/clients` pertenece al contexto `employee` (estilo hexagonal): `ListClientsUseCase` → `ClientController` → `client.routes.ts`. Lo usan web-admin y web-empleados para elegir el cliente de una mesa reservada.
 
 ### Platos e ingredientes
 
@@ -310,6 +315,29 @@ Todos cuelgan de `/api/v1`. La columna **Roles** indica qué valores de `req.use
 
 Los ingredientes son **más restrictivos** que los platos: solo `admin` puede crear, editar o borrar.
 
+### Mesas
+
+| Método | Ruta | Roles |
+| --- | --- | --- |
+| `GET` | `/api/v1/restaurants/:restaurantId/tables` | admin, manager, camarero — ordenadas por `number` |
+| `GET` | `/api/v1/restaurants/:restaurantId/tables/available?people=N` | autenticado — libres con `capacity >= N` más las reservadas por el usuario del JWT, ordenadas por `capacity` y `number` |
+| `GET` | `/api/v1/restaurants/:restaurantId/tables/:id` | admin, manager, camarero |
+| `POST` | `/api/v1/restaurants/:restaurantId/tables` | admin (201) |
+| `PUT` | `/api/v1/restaurants/:restaurantId/tables/:id` | admin |
+| `DELETE` | `/api/v1/restaurants/:restaurantId/tables/:id` | admin (204) |
+| `PATCH` | `/api/v1/restaurants/:restaurantId/tables/:id/status` | admin, manager, camarero — `{ status, reservedByClientId? }` |
+| `POST` | `/api/v1/restaurants/:restaurantId/tables/:id/occupy` | cliente — pasa la mesa a `ocupada` |
+
+Reglas principales (el detalle está en `docs/api/tables.openapi.yml`):
+
+- `number`, `capacity` deben ser enteros JSON > 0 y `people` un texto `^[1-9]\d*$`. `description` vacía se guarda como `null`.
+- **Regla única de reserva** (POST, PUT, PATCH): con `status = 'reservada'`, `reservedByClientId` es obligatorio y debe ser un usuario existente con rol `cliente`; con otro estado debe ser `null` u omitido (si no, `InvalidReservationClientError`).
+- Toda operación sobre `:id` comprueba que la mesa pertenece a `:restaurantId`; si no, `404 TableNotFoundError`.
+- No se puede repetir el número en un restaurante (`DuplicatedTableNumberError`) ni borrar una mesa `ocupada` (`TableOccupiedError`).
+- `occupy` es atómico (`UPDATE … WHERE status = 'libre' OR (status = 'reservada' AND reserved_by_client_id = ?)`) y no idempotente: si la mesa ya no está disponible, `TableNotAvailableError`. La mesa la liberan los empleados a mano.
+
+El cocinero no tiene acceso a las mesas (403).
+
 ### Pedidos
 
 | Método | Ruta | Roles |
@@ -323,6 +351,8 @@ Los ingredientes son **más restrictivos** que los platos: solo `admin` puede cr
 Ninguna ruta de pedidos aplica `authorize()`: cualquier usuario autenticado puede cambiar el estado de cualquier ítem.
 
 `GET /orders/active` devuelve los pedidos del restaurante que tengan **al menos un ítem** en estado distinto de `entregado`.
+
+`GET /orders/active`, `/orders/mine` y `/orders/:id` añaden `tableNumber: number | null` mediante `LEFT JOIN tables t ON t.id = o.table_id AND t.restaurant_id = o.restaurant_id` (`null` si el pedido no tiene mesa o su `tableId` no corresponde a ninguna). `POST /orders` no cambia: el cliente envía en `tableId` el `id` de la mesa ocupada.
 
 Al crear un pedido, el servicio **expande las cantidades**: un ítem con `quantity: 3` se guarda como 3 filas de `order_items` con `quantity: 1` cada una, para poder seguir el estado de cada unidad por separado.
 
@@ -345,7 +375,7 @@ Ambos responden directamente, sin pasar por el `errorHandler`.
 
 Jerarquía: `Error` → `AppError` (abstracta) → errores específicos en `errors/DomainErrors.ts`. `AppError` asigna `this.name = this.constructor.name`, y el `errorHandler` decide el código HTTP a partir de ese nombre:
 
-- **404**: `EmployeeNotFoundError`, `RestaurantNotFoundError`, `IngredientNotFoundError`, `DishNotFoundError`
+- **404**: `EmployeeNotFoundError`, `RestaurantNotFoundError`, `IngredientNotFoundError`, `DishNotFoundError`, `TableNotFoundError`
 - **401**: `InvalidCredentialsError`
 - **400**: cualquier otro `AppError`
 - **500**: errores no controlados
@@ -400,6 +430,7 @@ La ruta del fichero se decide en el constructor: `:memory:` si `NODE_ENV=test`, 
 Con **Vitest** (`npm test` desde la raíz, o `npm run test:watch` dentro de `packages/api`). Los tests son unitarios y conviven con el código que prueban:
 
 - Dominio y casos de uso de `employee`, con dobles en `contexts/employee/application/mocks/`
-- Servicios y repositorios de `restaurant`, `ingredient` y `order`, con dobles en `repositories/mocks/`
+- Servicios y repositorios de `restaurant`, `ingredient`, `order` y `table`, con dobles en `repositories/mocks/`
+- Rutas HTTP con `supertest` para mesas (`routes/table.routes.test.ts`) y clientes (`contexts/employee/infrastructure/http/client.routes.test.ts`), que cubren también `authenticate`, `authorize` y el `errorHandler`
 
-**No hay tests de integración HTTP.** `supertest` figura como dependencia de desarrollo pero no se usa en ningún test, así que las rutas, los middlewares y el `errorHandler` no están cubiertos.
+Fuera de mesas y clientes no hay tests de integración HTTP: el resto de rutas no están cubiertas.

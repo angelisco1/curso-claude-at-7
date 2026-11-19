@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router'
 import { DecimalPipe } from '@angular/common'
 import { CartStore } from '../../core/store/cart.store'
 import { OrderService } from '../../core/services/order.service'
+import { TableSelectionStore } from '../../core/store/table-selection.store'
 
 @Component({
   selector: 'app-cart',
@@ -45,6 +46,9 @@ import { OrderService } from '../../core/services/order.service'
 
           <aside class="order-summary card">
             <h3>Resumen</h3>
+            @if (selectionStore.table(); as table) {
+              <p class="order-table">Mesa {{ table.number }}</p>
+            }
             <div class="summary-row">
               <span>Items ({{ cartStore.itemCount() }})</span>
               <span>{{ cartStore.total() | number:'1.2-2' }} €</span>
@@ -147,6 +151,11 @@ import { OrderService } from '../../core/services/order.service'
       font-weight: 600;
       margin-bottom: 16px;
     }
+    .order-table {
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
     .summary-row {
       display: flex;
       justify-content: space-between;
@@ -170,6 +179,7 @@ import { OrderService } from '../../core/services/order.service'
 })
 export class CartComponent {
   readonly cartStore = inject(CartStore)
+  readonly selectionStore = inject(TableSelectionStore)
   private readonly orderService = inject(OrderService)
   private readonly router = inject(Router)
 
@@ -207,7 +217,9 @@ export class CartComponent {
       notes: item.notes || null
     }))
 
-    this.orderService.createOrder(restaurantId, items).subscribe({
+    const tableId = this.selectionStore.hasTableFor(restaurantId) ? this.selectionStore.table()!.id : null
+
+    this.orderService.createOrder(restaurantId, tableId, items).subscribe({
       next: (order) => {
         this.cartStore.clear()
         this.router.navigate(['/orders', order.id])

@@ -30,6 +30,16 @@ export class MockEmployeeRepository implements IEmployeeRepository {
         return Array.from(this.employees.values()).filter(emp => emp.restaurantId === restaurantId)
     }
 
+    async findAllClients(): Promise<Employee[]> {
+        return Array.from(this.employees.values())
+            .filter(emp => emp.role === 'cliente')
+            .sort((a, b) =>
+                a.lastName.localeCompare(b.lastName) ||
+                a.firstName.localeCompare(b.firstName) ||
+                a.email.localeCompare(b.email)
+            )
+    }
+
     async save(employee: Employee): Promise<void> {
         this.employees.set(employee.id, employee)
     }

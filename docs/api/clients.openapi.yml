@@ -1,0 +1,148 @@
+openapi: 3.1.0
+info:
+  title: Resttek API - Clientes
+  version: 1.0.0
+  description: |
+    Documentación de los endpoints de **clientes** (`clients`) de la API de Resttek, una plataforma de gestión de restaurantes.
+
+    Los clientes son usuarios de la tabla `employees` con rol `cliente` (contexto hexagonal `employee`). Este recurso expone
+    su listado para que el personal pueda elegir a qué cliente reservar una mesa (ver `tables.openapi.yml`) y cruzar
+    `reservedByClientId` con su nombre.
+
+    ## Autenticación
+    El endpoint exige un JWT en la cabecera `Authorization: Bearer <token>` (se obtiene en `/auth/login`).
+    El token se valida con `authenticate` y el rol con `authorize`. Roles existentes: `admin`, `manager`, `camarero`,
+    `cocinero`, `cliente`.
+
+    ## Formato de errores
+    - Errores de autenticación/autorización (middlewares): cuerpo `{ "error": "<texto>" }` (sin campo `message`), estados `401` y `403`.
+    - Cualquier otro error no controlado (incluidos fallos de SQLite): `500` con
+      `{ "error": "InternalServerError", "message": "Something went wrong" }`.
+
+    ## Consideraciones generales (comportamiento real del código)
+    - La ruta está fuera de cualquier restaurante (`/clients`): devuelve **todos** los clientes de la plataforma, sin
+      filtrar por el restaurante del usuario autenticado.
+    - No hay paginación, filtros ni parámetros: la consulta no tiene límite.
+    - Solo se exponen datos de presentación (`id`, `firstName`, `lastName`, `email`); nunca `passwordHash`, `role` ni
+      `restaurantId`.
+  contact:
+    name: Equipo Resttek
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Servidor local de desarrollo
+tags:
+  - name: Clientes
+    description: Consulta de los usuarios con rol cliente (requiere autenticación).
+security:
+  - bearerAuth: []
+paths:
+  /clients:
+    get:
+      tags: [Clientes]
+      operationId: listClients
+      summary: Listar los clientes
+      description: |
+        Devuelve todos los usuarios con rol `cliente`, ordenados por `lastName`, después `firstName` y después `email`.
+
+        **Roles permitidos:** `admin`, `manager`, `camarero`.
+
+        Sin clientes devuelve `200` con `[]`.
+      responses:
+        '200':
+          description: Lista de clientes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Client'
+              example:
+                - id: 2b6c1e0a-7d4f-4b8e-9a1c-3e5f7a9b1c2d
+                  firstName: Lucía
+                  lastName: García
+                  email: cliente1@resttek.com
+                - id: 7c8d9e0f-1a2b-4c3d-9e4f-5a6b7c8d9e0f
+                  firstName: Mario
+                  lastName: López
+                  email: cliente2@resttek.com
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT obtenido en el login (`/auth/login`), válido 8 horas. El payload incluye el rol del usuario
+        (`admin`, `manager`, `camarero`, `cocinero`, `cliente`), que se comprueba en cada endpoint.
+  schemas:
+    Client:
+      type: object
+      description: Datos de presentación de un usuario con rol `cliente`.
+      required: [id, firstName, lastName, email]
+      properties:
+        id:
+          type: string
+          description: Id del usuario; es el valor que se usa en `reservedByClientId` de las mesas.
+          example: 2b6c1e0a-7d4f-4b8e-9a1c-3e5f7a9b1c2d
+        firstName:
+          type: string
+          example: Lucía
+        lastName:
+          type: string
+          example: García
+        email:
+          type: string
+          format: email
+          example: cliente1@resttek.com
+    DomainError:
+      type: object
+      description: Cuerpo de error devuelto por el `errorHandler` para errores no controlados.
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          enum: [InternalServerError]
+        message:
+          type: string
+    AuthError:
+      type: object
+      description: Cuerpo de error de los middlewares `authenticate` y `authorize` (sin campo `message`).
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: 'Unauthorized: No token provided'
+  responses:
+    Unauthorized:
+      description: |
+        No autenticado. Mensajes posibles: `Unauthorized: No token provided` (falta la cabecera `Authorization: Bearer`),
+        `Unauthorized: Malformed token` y `Unauthorized: Invalid token` (JWT inválido o caducado).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthError'
+          example:
+            error: 'Unauthorized: Invalid token'
+    Forbidden:
+      description: El rol del usuario autenticado no es `admin`, `manager` ni `camarero`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthError'
+          example:
+            error: 'Forbidden: Insufficient permissions'
+    InternalServerError:
+      description: Error no controlado (p. ej. fallo de SQLite).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DomainError'
+          example:
+            error: InternalServerError
+            message: Something went wrong
