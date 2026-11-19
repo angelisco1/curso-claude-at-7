@@ -2,7 +2,7 @@ import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core'
 import { RouterLink } from '@angular/router'
 import { DatePipe, DecimalPipe } from '@angular/common'
 import { OrderService } from '../../core/services/order.service'
-import { Order } from '../../core/models/order.model'
+import { Order, orderTableLabel } from '../../core/models/order.model'
 
 @Component({
   selector: 'app-my-orders',
@@ -37,6 +37,9 @@ import { Order } from '../../core/models/order.model'
               </div>
               <div class="order-info">
                 <span class="restaurant-name">{{ order.restaurantName }}</span>
+                @if (tableLabel(order); as table) {
+                  <span class="order-table">{{ table }}</span>
+                }
                 <span class="order-meta">
                   <span>{{ order.items.length }} {{ order.items.length === 1 ? 'artículo' : 'artículos' }}</span>
                   <span class="order-total">{{ getOrderTotal(order) | number:'1.2-2' }} €</span>
@@ -108,6 +111,10 @@ import { Order } from '../../core/models/order.model'
       font-weight: 500;
       color: var(--text-primary);
     }
+    .order-table {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
     .order-meta {
       display: flex;
       align-items: center;
@@ -126,6 +133,7 @@ export class MyOrdersComponent implements OnInit, OnDestroy {
   readonly orders = signal<Order[]>([])
   readonly loading = signal(true)
   readonly error = signal<string | null>(null)
+  readonly tableLabel = orderTableLabel
 
   ngOnInit(): void {
     this.loadOrders()
