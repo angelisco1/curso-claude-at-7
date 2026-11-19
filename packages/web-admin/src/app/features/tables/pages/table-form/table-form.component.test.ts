@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing'
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router'
 import { importProvidersFrom, signal } from '@angular/core'
 import { ChevronLeft, LucideAngularModule } from 'lucide-angular'
-import { of } from 'rxjs'
+import { of, throwError } from 'rxjs'
 import { TableFormComponent } from './table-form.component'
 import { TableStore } from '../../store/table.store'
 import { TableService } from '../../services/table.service'
@@ -13,7 +13,7 @@ const clientes: Client[] = [
   { id: 'c-2', firstName: 'Luis', lastName: 'Pérez', email: 'cliente2@resttek.com' }
 ]
 
-function configurarFormulario(params: Record<string, string> = {}, opciones: { clientsError?: string | null } = {}) {
+function configurarFormulario(params: Record<string, string> = {}, opciones: { clientsError?: string | null } = {}, mesa?: unknown) {
   const store = {
     clients: signal(clientes),
     clientsError: signal(opciones.clientsError ?? null),
@@ -21,7 +21,10 @@ function configurarFormulario(params: Record<string, string> = {}, opciones: { c
     create: vi.fn().mockResolvedValue(undefined),
     update: vi.fn().mockResolvedValue(undefined)
   }
-  const service = { getById: vi.fn().mockReturnValue(of(undefined)) }
+  // Si «mesa» es un error HTTP (status numérico), getById falla con él
+  const esError = typeof (mesa as { status?: unknown } | undefined)?.status === 'number'
+  const respuesta = esError ? throwError(() => mesa) : of(mesa)
+  const service = { getById: vi.fn().mockReturnValue(respuesta) }
 
   TestBed.configureTestingModule({
     imports: [TableFormComponent],
@@ -195,5 +198,95 @@ describe('TableFormComponent (alta)', () => {
       expect(navigate).not.toHaveBeenCalled()
       expect(el.querySelector('[role="alert"]')?.textContent).toContain('Una mesa reservada necesita un cliente válido')
     })
+  })
+})
+
+describe('TableFormComponent (edición)', () => {
+  const mesaReservada = {
+    id: 't-1', restaurantId: 'rest-1', number: 4, description: 'Ventana', capacity: 6,
+    status: 'reservada' as const, reservedByClientId: 'c-2', createdAt: '', updatedAt: ''
+  }
+
+  async function editar(mesa: unknown = mesaReservada) {
+    const ctx = configurarFormulario({ id: 't-1' }, {}, mesa)
+    await ctx.refrescar()
+    await ctx.refrescar()
+    return ctx
+  }
+
+  it('muestra «Editar mesa» y carga la mesa por id', async () => {
+    const { el, service } = await editar()
+    expect(service.getById).toHaveBeenCalledWith('rest-1', 't-1')
+    expect(el.querySelector('h1')?.textContent?.trim()).toBe('Editar mesa')
+  })
+
+  it('rellena los campos, el estado y el cliente de la reserva', async () => {
+    const { el } = await editar()
+    expect((el.querySelector('#table-number') as HTMLInputElement).value).toBe('4')
+    expect((el.querySelector('#table-capacity') as HTMLInputElement).value).toBe('6')
+    expect((el.querySelector('#table-description') as HTMLTextAreaElement).value).toBe('Ventana')
+    expect((el.querySelector('#table-status') as HTMLSelectElement).value).toBe('reservada')
+    expect((el.querySelector('#table-client') as HTMLSelectElement).value).toBe('c-2')
+  })
+
+  it('guarda con store.update enviando los 5 campos y vuelve al listado', async () => {
+    const { store, navigate, escribir, enviar } = await editar()
+    escribir('table-capacity', '8')
+    await enviar()
+    expect(store.create).not.toHaveBeenCalled()
+    expect(store.update).toHaveBeenCalledWith('rest-1', 't-1', {
+      number: 4, capacity: 8, description: 'Ventana', status: 'reservada', reservedByClientId: 'c-2'
+    })
+    expect(navigate).toHaveBeenCalledWith(['/restaurants', 'rest-1', 'tables'])
+  })
+
+  it('al liberar una mesa reservada envía reservedByClientId null', async () => {
+    const { store, elegir, enviar, refrescar } = await editar()
+    elegir('table-status', 'libre')
+    await refrescar()
+    await enviar()
+    expect(store.update).toHaveBeenCalledWith('rest-1', 't-1', {
+      number: 4, capacity: 6, description: 'Ventana', status: 'libre', reservedByClientId: null
+    })
+  })
+
+  it('muestra el error del backend en el campo número si está duplicado', async () => {
+    const { el, store, navigate, enviar } = await editar()
+    store.update.mockRejectedValue({ status: 400, error: { error: 'DuplicatedTableNumberError', message: 'Ya existe una mesa con ese número en este restaurante' } })
+    await enviar()
+    expect(navigate).not.toHaveBeenCalled()
+    const numero = el.querySelector('#table-number') as HTMLElement
+    expect(numero.getAttribute('aria-invalid')).toBe('true')
+    expect(el.querySelector(`#${numero.getAttribute('aria-describedby')}`)?.textContent)
+      .toContain('Ya existe una mesa con ese número en este restaurante')
+  })
+
+  it('muestra el error del backend en el cliente si la reserva no es válida', async () => {
+    const { el, store, enviar } = await editar()
+    store.update.mockRejectedValue({ status: 400, error: { error: 'InvalidReservationClientError', message: 'Una mesa reservada necesita un cliente válido' } })
+    await enviar()
+    const cliente = el.querySelector('#table-client') as HTMLElement
+    expect(cliente.getAttribute('aria-invalid')).toBe('true')
+    expect(el.querySelector(`#${cliente.getAttribute('aria-describedby')}`)?.textContent)
+      .toContain('Una mesa reservada necesita un cliente válido')
+  })
+
+  it('muestra un texto genérico si el backend falla con 500', async () => {
+    const { el, store, enviar } = await editar()
+    store.update.mockRejectedValue({ status: 500, error: { error: 'InternalServerError', message: 'Something went wrong' } })
+    await enviar()
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain('Error al guardar la mesa.')
+  })
+
+  it('muestra el mensaje del backend si la mesa no existe', async () => {
+    const { el } = await editar({ status: 404, error: { error: 'TableNotFoundError', message: 'Mesa no encontrada' } })
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain('Mesa no encontrada')
+  })
+
+  it('muestra «Cliente desconocido» si el cliente reservado no está en /clients', async () => {
+    const { el } = await editar({ ...mesaReservada, reservedByClientId: 'c-99' })
+    const opciones = Array.from(el.querySelectorAll('#table-client option')).map(o => o.textContent?.trim())
+    expect(opciones).toContain('Cliente desconocido')
+    expect((el.querySelector('#table-client') as HTMLSelectElement).value).toBe('c-99')
   })
 })

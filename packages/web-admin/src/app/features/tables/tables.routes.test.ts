@@ -13,3 +13,12 @@ describe('TABLE_ROUTES', () => {
     expect((componente as { name: string }).name).toContain('TableFormComponent')
   })
 })
+
+describe('TABLE_ROUTES (edición)', () => {
+  it('la edición carga el formulario de mesas', async () => {
+    const edicion = TABLE_ROUTES.find(r => r.path === ':id/edit')
+    expect(edicion).toBeDefined()
+    const componente = await (edicion?.loadComponent as () => Promise<unknown>)()
+    expect((componente as { name: string }).name).toContain('TableFormComponent')
+  })
+})

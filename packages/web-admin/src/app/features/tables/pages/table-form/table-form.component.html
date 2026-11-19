@@ -64,6 +64,9 @@
             [attr.aria-invalid]="errors().reservedByClientId ? 'true' : null"
             [attr.aria-describedby]="errors().reservedByClientId ? 'table-client-error' : (store.clientsError() ? 'table-client-warning' : null)">
             <option value="">Seleccionar cliente</option>
+            @if (hasUnknownClient) {
+              <option [value]="form.reservedByClientId">Cliente desconocido</option>
+            }
             @for (c of store.clients(); track c.id) {
               <option [value]="c.id">{{ clientOptionLabel(c) }}</option>
             }

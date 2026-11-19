@@ -8,5 +8,9 @@ export const TABLE_ROUTES: Routes = [
   {
     path: 'new',
     loadComponent: () => import('./pages/table-form/table-form.component').then(m => m.TableFormComponent)
+  },
+  {
+    path: ':id/edit',
+    loadComponent: () => import('./pages/table-form/table-form.component').then(m => m.TableFormComponent)
   }
 ]

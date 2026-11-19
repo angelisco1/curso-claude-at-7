@@ -3,11 +3,20 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Router, RouterLink } from '@angular/router'
 import { LucideAngularModule } from 'lucide-angular'
-import { combineLatest, of } from 'rxjs'
+import { combineLatest, firstValueFrom, of } from 'rxjs'
 import { TableStore } from '../../store/table.store'
+import { TableService } from '../../services/table.service'
 import { TABLE_STATUSES, apiErrorMessage, tableStatusLabel } from '../../models/table.presentation'
-import type { Client } from '../../models/table.model'
+import type { Client, Table } from '../../models/table.model'
 import { toTableDto, validateTableForm, type TableFormErrors, type TableFormValue } from './table-form.validation'
+
+// Errores del backend que se muestran junto a su campo (C4)
+const FIELD_ERRORS: Record<string, keyof TableFormErrors> = {
+  InvalidTableNumberError: 'number',
+  DuplicatedTableNumberError: 'number',
+  InvalidTableCapacityError: 'capacity',
+  InvalidReservationClientError: 'reservedByClientId'
+}
 
 @Component({
   selector: 'app-table-form',
@@ -18,11 +27,14 @@ import { toTableDto, validateTableForm, type TableFormErrors, type TableFormValu
 })
 export class TableFormComponent implements OnInit {
   readonly store = inject(TableStore)
+  private readonly service = inject(TableService)
   private readonly route = inject(ActivatedRoute)
   private readonly router = inject(Router)
   private readonly destroyRef = inject(DestroyRef)
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef)
 
+  isEditing = false
+  tableId: string | null = null
   restaurantId = ''
   loading = signal(false)
   error = signal<string | null>(null)
@@ -43,7 +55,7 @@ export class TableFormComponent implements OnInit {
   })
 
   get pageTitle(): string {
-    return 'Nueva mesa'
+    return this.isEditing ? 'Editar mesa' : 'Nueva mesa'
   }
 
   get listUrl(): string {
@@ -58,16 +70,46 @@ export class TableFormComponent implements OnInit {
     return `${client.firstName} ${client.lastName} (${client.email})`
   }
 
+  // El cliente reservado puede no estar en /clients (C6: «Cliente desconocido»)
+  get hasUnknownClient(): boolean {
+    const id = this.form.reservedByClientId
+    return !!id && !this.store.clients().some(c => c.id === id)
+  }
+
   ngOnInit(): void {
     this.store.loadClients()
     combineLatest([this.route.parent?.paramMap ?? of(null), this.route.paramMap])
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([parentParams]) => {
+      .subscribe(([parentParams, params]) => {
         this.restaurantId = parentParams?.get('restaurantId') ?? ''
+        const id = params.get('id')
         this.form = this.emptyForm()
         this.error.set(null)
         this.errors.set({})
+        this.isEditing = !!(id && this.restaurantId)
+        this.tableId = this.isEditing ? id : null
+        if (this.isEditing) {
+          this.loadTable()
+        }
       })
+  }
+
+  private async loadTable(): Promise<void> {
+    this.loading.set(true)
+    try {
+      const table: Table = await firstValueFrom(this.service.getById(this.restaurantId, this.tableId!))
+      this.form = {
+        number: table.number,
+        capacity: table.capacity,
+        description: table.description ?? '',
+        status: table.status,
+        reservedByClientId: table.reservedByClientId ?? ''
+      }
+    } catch (err) {
+      this.error.set(apiErrorMessage(err, 'No se pudo cargar la mesa.'))
+    } finally {
+      this.loading.set(false)
+    }
   }
 
   focusField(targetId: string, event?: Event): void {
@@ -86,6 +128,21 @@ export class TableFormComponent implements OnInit {
     })
   }
 
+  private showBackendError(err: unknown): void {
+    const message = apiErrorMessage(err, 'Error al guardar la mesa.')
+    const code = (err as { error?: { error?: string } | null } | null)?.error?.error
+    const field = code ? FIELD_ERRORS[code] : undefined
+    // El selector de cliente solo existe con estado reservada; si no, el error va al aviso general
+    const fieldVisible = field && (field !== 'reservedByClientId' || this.form.status === 'reservada')
+    if (fieldVisible) {
+      this.errors.set({ [field]: message })
+      const first = this.summaryItems()[0]
+      if (first) setTimeout(() => this.focusField(first.targetId))
+    } else {
+      this.error.set(message)
+    }
+  }
+
   async onSubmit(): Promise<void> {
     this.error.set(null)
     const validation = validateTableForm(this.form)
@@ -98,10 +155,15 @@ export class TableFormComponent implements OnInit {
 
     this.loading.set(true)
     try {
-      await this.store.create(this.restaurantId, toTableDto(this.form))
+      const dto = toTableDto(this.form)
+      if (this.isEditing && this.tableId) {
+        await this.store.update(this.restaurantId, this.tableId, dto)
+      } else {
+        await this.store.create(this.restaurantId, dto)
+      }
       this.router.navigate(['/restaurants', this.restaurantId, 'tables'])
     } catch (err) {
-      this.error.set(apiErrorMessage(err, 'Error al guardar la mesa.'))
+      this.showBackendError(err)
     } finally {
       this.loading.set(false)
     }
