@@ -1,9 +1,12 @@
 import { TestBed } from '@angular/core/testing'
 import { HttpErrorResponse } from '@angular/common/http'
+import { signal } from '@angular/core'
 import { of, throwError } from 'rxjs'
 import { TableStore } from './table.store'
 import { TableService } from '../services/table.service'
 import { Client, Table } from '../models/table.model'
+import { OrderStore } from '../../orders/store/order.store'
+import { Order } from '../../orders/models/order.model'
 
 function mesa(datos: Partial<Table> = {}): Table {
   return {
@@ -32,8 +35,14 @@ function configurar() {
     changeStatus: vi.fn(),
     getClients: vi.fn().mockReturnValue(of(clientes))
   }
-  TestBed.configureTestingModule({ providers: [{ provide: TableService, useValue: service }] })
-  return { store: TestBed.inject(TableStore), service }
+  const orderStore = { orders: signal<Order[]>([]) }
+  TestBed.configureTestingModule({
+    providers: [
+      { provide: TableService, useValue: service },
+      { provide: OrderStore, useValue: orderStore }
+    ]
+  })
+  return { store: TestBed.inject(TableStore), service, orderStore }
 }
 
 describe('TableStore', () => {
@@ -152,6 +161,21 @@ describe('TableStore', () => {
       vi.advanceTimersByTime(30000)
       expect(service.getAll).toHaveBeenCalledTimes(1)
       store.stopPolling()
+    })
+  })
+
+  describe('tablesWithOrders', () => {
+    it('agrupa los pedidos activos del OrderStore por mesa', async () => {
+      const { store, orderStore } = configurar()
+      await store.load('rest-1')
+      const pedido: Order = { id: 'o1', restaurantId: 'rest-1', tableId: 'table-2', clientId: null, createdAt: '', items: [] }
+      orderStore.orders.set([pedido])
+
+      const resultado = store.tablesWithOrders()
+
+      expect(resultado.map(r => r.table.id)).toEqual(['table-1', 'table-2'])
+      expect(resultado[0].orders).toEqual([])
+      expect(resultado[1].orders).toEqual([pedido])
     })
   })
 })

@@ -1,7 +1,9 @@
-import { Injectable, inject, signal } from '@angular/core'
+import { Injectable, computed, inject, signal } from '@angular/core'
 import { firstValueFrom } from 'rxjs'
 import { Client, Table, TableStatus } from '../models/table.model'
 import { TableService } from '../services/table.service'
+import { groupOrdersByTable } from '../models/table-orders'
+import { OrderStore } from '../../orders/store/order.store'
 
 const POLLING_MS = 30000
 const FORBIDDEN_MESSAGE = 'No tienes permiso para realizar esta acción'
@@ -20,6 +22,7 @@ function apiErrorMessage(err: any, fallback: string): string {
 @Injectable({ providedIn: 'root' })
 export class TableStore {
   private readonly tableService = inject(TableService)
+  private readonly orderStore = inject(OrderStore)
 
   private readonly _tables = signal<Table[]>([])
   private readonly _clients = signal<Client[]>([])
@@ -34,6 +37,7 @@ export class TableStore {
   readonly loading = this._loading.asReadonly()
   readonly error = this._error.asReadonly()
   readonly clientsError = this._clientsError.asReadonly()
+  readonly tablesWithOrders = computed(() => groupOrdersByTable(this._tables(), this.orderStore.orders()))
 
   async load(restaurantId: string): Promise<void> {
     this._loading.set(true)
