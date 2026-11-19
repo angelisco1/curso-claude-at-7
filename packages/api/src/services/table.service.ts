@@ -7,12 +7,22 @@ import {
     InvalidTableNumberError,
     InvalidTableCapacityError,
     DuplicatedTableNumberError,
-    InvalidReservationClientError
+    InvalidReservationClientError,
+    TableNotFoundError,
+    TableOccupiedError
 } from '@errors/DomainErrors.js'
 
 // Los campos llegan sin tipar desde el cuerpo HTTP: el servicio los valida estrictamente
 export interface CreateTableDTO {
     restaurantId: string
+    number: unknown
+    capacity: unknown
+    description?: unknown
+    status?: unknown
+    reservedByClientId?: unknown
+}
+
+export interface UpdateTableDTO {
     number: unknown
     capacity: unknown
     description?: unknown
@@ -42,6 +52,44 @@ export class TableService {
 
         await this.tableRepository.save(table)
         return table
+    }
+
+    async findByRestaurantId(restaurantId: string): Promise<Table[]> {
+        return this.tableRepository.findByRestaurantId(restaurantId)
+    }
+
+    async findById(restaurantId: string, id: string): Promise<Table> {
+        const table = await this.tableRepository.findById(id)
+        if (!table || table.restaurantId !== restaurantId) {
+            throw new TableNotFoundError()
+        }
+        return table
+    }
+
+    async update(restaurantId: string, id: string, dto: UpdateTableDTO): Promise<Table> {
+        const existing = await this.findById(restaurantId, id)
+        const updated = await this.buildTable({
+            id: existing.id,
+            restaurantId: existing.restaurantId,
+            number: dto.number,
+            capacity: dto.capacity,
+            description: dto.description,
+            status: dto.status,
+            reservedByClientId: dto.reservedByClientId,
+            createdAt: existing.createdAt,
+            updatedAt: new Date().toISOString()
+        })
+
+        await this.tableRepository.save(updated)
+        return updated
+    }
+
+    async delete(restaurantId: string, id: string): Promise<void> {
+        const existing = await this.findById(restaurantId, id)
+        if (existing.status === 'ocupada') {
+            throw new TableOccupiedError()
+        }
+        await this.tableRepository.delete(id)
     }
 
     private async buildTable(props: {
