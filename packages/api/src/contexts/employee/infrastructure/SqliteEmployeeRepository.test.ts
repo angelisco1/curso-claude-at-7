@@ -77,3 +77,47 @@ describe('SqliteEmployeeRepository (Integration)', () => {
         expect(found).toBeNull()
     })
 })
+
+describe('SqliteEmployeeRepository.findAllClients (Integration)', () => {
+    let db: Database
+    let repo: SqliteEmployeeRepository
+
+    const buildEmployee = (id: string, firstName: string, lastName: string, role: string) => Employee.create({
+        id,
+        firstName,
+        lastName,
+        email: `${id}@resttek.com`,
+        passwordHash: 'hashed123',
+        role,
+        restaurantId: null
+    })
+
+    beforeAll(async () => {
+        process.env.NODE_ENV = 'test'
+        db = new Database()
+        await db.initialize()
+        repo = new SqliteEmployeeRepository(db)
+
+        await repo.save(buildEmployee('camarero', 'Ana', 'Abad', 'camarero'))
+        await repo.save(buildEmployee('c-zz', 'Zoe', 'Zamora', 'cliente'))
+        await repo.save(buildEmployee('c-gb', 'Bea', 'Gómez', 'cliente'))
+        await repo.save(buildEmployee('c-ga2', 'Ana', 'Gómez', 'cliente'))
+        await repo.save(buildEmployee('c-ga1', 'Ana', 'Gómez', 'cliente'))
+        for (let i = 0; i < 10; i++) {
+            await repo.save(buildEmployee(`c-extra-${i}`, 'Extra', `Pérez${i}`, 'cliente'))
+        }
+    })
+
+    afterAll(async () => {
+        await db.close()
+    })
+
+    it('devuelve solo los clientes, sin paginación, ordenados por apellido, nombre y email', async () => {
+        const clients = await repo.findAllClients()
+
+        expect(clients).toHaveLength(14)
+        expect(clients.every(c => c.role === 'cliente')).toBe(true)
+        expect(clients.slice(0, 3).map(c => c.id)).toEqual(['c-ga1', 'c-ga2', 'c-gb'])
+        expect(clients.at(-1)?.id).toBe('c-zz')
+    })
+})

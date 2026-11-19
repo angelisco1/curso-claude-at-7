@@ -5,6 +5,7 @@ export interface IEmployeeRepository {
     findByEmail(email: string): Promise<Employee | null>
     findAll(limit?: number, offset?: number, role?: string): Promise<Employee[]>
     findByRestaurant(restaurantId: string): Promise<Employee[]>
+    findAllClients(): Promise<Employee[]>
     save(employee: Employee): Promise<void>
     delete(id: string): Promise<void>
 }

@@ -3,6 +3,7 @@ import cors from 'cors'
 import authRoutes from '@employee/infrastructure/http/auth.routes.js'
 import employeeRoutes from '@employee/infrastructure/http/employee.routes.js'
 import restaurantEmployeeRoutes from '@employee/infrastructure/http/restaurant-employee.routes.js'
+import clientRoutes from '@employee/infrastructure/http/client.routes.js'
 import restaurantRoutes from '@routes/restaurant.routes.js'
 import ingredientRoutes from '@routes/ingredient.routes.js'
 import dishRoutes from '@routes/dish.routes.js'
@@ -20,6 +21,7 @@ app.use(express.json())
 app.use('/api/v1/orders', orderRoutes)
 app.use('/api/v1/auth', authRoutes)
 app.use('/api/v1/employees', employeeRoutes)
+app.use('/api/v1/clients', clientRoutes)
 app.use('/api/v1/public/restaurants', publicRestaurantRoutes)
 app.use('/api/v1/public/restaurants/:restaurantId/dishes', publicDishRoutes)
 app.use('/api/v1/restaurants', restaurantRoutes)
