@@ -9,8 +9,13 @@ import {
     DuplicatedTableNumberError,
     InvalidReservationClientError,
     TableNotFoundError,
-    TableOccupiedError
+    TableOccupiedError,
+    TableNotAvailableError,
+    InvalidPeopleCountError
 } from '@errors/DomainErrors.js'
+
+// people llega por query string: solo se admite un entero positivo sin signo, ceros a la izquierda ni decimales
+const PEOPLE_PATTERN = /^[1-9]\d*$/
 
 // Los campos llegan sin tipar desde el cuerpo HTTP: el servicio los valida estrictamente
 export interface CreateTableDTO {
@@ -26,6 +31,11 @@ export interface UpdateTableDTO {
     number: unknown
     capacity: unknown
     description?: unknown
+    status?: unknown
+    reservedByClientId?: unknown
+}
+
+export interface ChangeTableStatusDTO {
     status?: unknown
     reservedByClientId?: unknown
 }
@@ -90,6 +100,38 @@ export class TableService {
             throw new TableOccupiedError()
         }
         await this.tableRepository.delete(id)
+    }
+
+    async changeStatus(restaurantId: string, id: string, dto: ChangeTableStatusDTO): Promise<Table> {
+        const existing = await this.findById(restaurantId, id)
+        const status = normalizeTableStatus(dto.status)
+        const reservedByClientId = await this.resolveReservation(status, dto.reservedByClientId)
+
+        const updated: Table = {
+            ...existing,
+            status,
+            reservedByClientId,
+            updatedAt: new Date().toISOString()
+        }
+        await this.tableRepository.save(updated)
+        return updated
+    }
+
+    async findAvailable(restaurantId: string, people: unknown, clientId: string): Promise<Table[]> {
+        if (typeof people !== 'string' || !PEOPLE_PATTERN.test(people)) {
+            throw new InvalidPeopleCountError()
+        }
+        return this.tableRepository.findAvailable(restaurantId, Number(people), clientId)
+    }
+
+    async occupy(restaurantId: string, id: string, clientId: string): Promise<Table> {
+        await this.findById(restaurantId, id)
+
+        const occupied = await this.tableRepository.occupyIfFree(id, restaurantId, clientId)
+        if (!occupied) {
+            throw new TableNotAvailableError()
+        }
+        return this.findById(restaurantId, id)
     }
 
     private async buildTable(props: {

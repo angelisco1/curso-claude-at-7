@@ -11,7 +11,9 @@ import {
     DuplicatedTableNumberError,
     InvalidReservationClientError,
     TableNotFoundError,
-    TableOccupiedError
+    TableOccupiedError,
+    InvalidPeopleCountError,
+    TableNotAvailableError
 } from '@errors/DomainErrors.js'
 
 const buildEmployee = (id: string, role: string) => Employee.create({
@@ -245,6 +247,132 @@ describe('TableService', () => {
             await expect(service.delete('r1', 'no-existe')).rejects.toThrow(TableNotFoundError)
             await expect(service.delete('r1', table.id)).rejects.toThrow(TableNotFoundError)
             expect(await tableRepository.findById(table.id)).not.toBeNull()
+        })
+    })
+    describe('changeStatus', () => {
+        let table: Table
+
+        beforeEach(async () => {
+            table = await service.create({ restaurantId: 'r1', number: 1, capacity: 4, description: 'Terraza' })
+            await new Promise(resolve => setTimeout(resolve, 2))
+        })
+
+        it('normaliza el estado, conserva el resto de campos y actualiza updatedAt', async () => {
+            const updated = await service.changeStatus('r1', table.id, { status: ' OCUPADA ' })
+
+            expect(updated).toMatchObject({ ...table, status: 'ocupada', updatedAt: expect.any(String) })
+            expect(updated.updatedAt > table.updatedAt).toBe(true)
+            expect(await tableRepository.findById(table.id)).toEqual(updated)
+        })
+
+        it('reserva para un cliente válido', async () => {
+            const updated = await service.changeStatus('r1', table.id, { status: 'reservada', reservedByClientId: 'cliente-1' })
+
+            expect(updated.status).toBe('reservada')
+            expect(updated.reservedByClientId).toBe('cliente-1')
+        })
+
+        it('limpia el cliente al pasar de reservada a otro estado', async () => {
+            await service.changeStatus('r1', table.id, { status: 'reservada', reservedByClientId: 'cliente-1' })
+
+            const updated = await service.changeStatus('r1', table.id, { status: 'libre' })
+            expect(updated.reservedByClientId).toBeNull()
+        })
+
+        it('permite cualquier transición, incluida ocupada a libre', async () => {
+            await service.changeStatus('r1', table.id, { status: 'ocupada' })
+
+            const updated = await service.changeStatus('r1', table.id, { status: 'libre' })
+            expect(updated.status).toBe('libre')
+        })
+
+        it('es idempotente al mismo estado y actualiza updatedAt', async () => {
+            const updated = await service.changeStatus('r1', table.id, { status: 'libre' })
+
+            expect(updated.status).toBe('libre')
+            expect(updated.updatedAt > table.updatedAt).toBe(true)
+        })
+
+        it.each([[undefined], ['rota'], ['']])('rechaza el estado %o', async (status) => {
+            await expect(service.changeStatus('r1', table.id, { status }))
+                .rejects.toThrow(InvalidTableStatusError)
+        })
+
+        it('aplica la regla de reserva', async () => {
+            await expect(service.changeStatus('r1', table.id, { status: 'reservada' }))
+                .rejects.toThrow(InvalidReservationClientError)
+            await expect(service.changeStatus('r1', table.id, { status: 'reservada', reservedByClientId: 'camarero-1' }))
+                .rejects.toThrow(InvalidReservationClientError)
+            await expect(service.changeStatus('r1', table.id, { status: 'libre', reservedByClientId: 'cliente-1' }))
+                .rejects.toThrow(InvalidReservationClientError)
+        })
+
+        it('lanza TableNotFoundError si no existe o es de otro restaurante', async () => {
+            await expect(service.changeStatus('r1', 'no-existe', { status: 'libre' })).rejects.toThrow(TableNotFoundError)
+            await expect(service.changeStatus('r2', table.id, { status: 'libre' })).rejects.toThrow(TableNotFoundError)
+        })
+    })
+
+    describe('findAvailable', () => {
+        beforeEach(async () => {
+            await service.create({ restaurantId: 'r1', number: 1, capacity: 2 })
+            await service.create({ restaurantId: 'r1', number: 2, capacity: 6 })
+            await service.create({ restaurantId: 'r1', number: 3, capacity: 4, status: 'reservada', reservedByClientId: 'cliente-1' })
+            await service.create({ restaurantId: 'r1', number: 4, capacity: 4, status: 'ocupada' })
+        })
+
+        it('acepta people como texto de entero positivo', async () => {
+            const tables = await service.findAvailable('r1', '3', 'cliente-1')
+            expect(tables.map(t => t.number)).toEqual([3, 2])
+        })
+
+        it('no devuelve las reservadas por otro cliente', async () => {
+            const tables = await service.findAvailable('r1', '1', 'otro-cliente')
+            expect(tables.map(t => t.number)).toEqual([1, 2])
+        })
+
+        it.each([[undefined], [''], ['0'], ['-1'], ['2.5'], ['abc'], ['03'], [' 3'], [['2', '3']]])(
+            'lanza InvalidPeopleCountError con people %o',
+            async (people) => {
+                await expect(service.findAvailable('r1', people, 'cliente-1')).rejects.toThrow(InvalidPeopleCountError)
+            }
+        )
+    })
+
+    describe('occupy', () => {
+        it('ocupa una mesa libre y devuelve la mesa ocupada', async () => {
+            const table = await service.create({ restaurantId: 'r1', number: 1, capacity: 4 })
+
+            const occupied = await service.occupy('r1', table.id, 'cliente-1')
+            expect(occupied).toMatchObject({ id: table.id, status: 'ocupada', reservedByClientId: null })
+        })
+
+        it('ocupa una mesa reservada por el mismo cliente', async () => {
+            const table = await service.create({ restaurantId: 'r1', number: 1, capacity: 4, status: 'reservada', reservedByClientId: 'cliente-1' })
+
+            const occupied = await service.occupy('r1', table.id, 'cliente-1')
+            expect(occupied).toMatchObject({ status: 'ocupada', reservedByClientId: null })
+        })
+
+        it('lanza TableNotAvailableError si está reservada por otro cliente', async () => {
+            const table = await service.create({ restaurantId: 'r1', number: 1, capacity: 4, status: 'reservada', reservedByClientId: 'cliente-1' })
+
+            await expect(service.occupy('r1', table.id, 'otro-cliente')).rejects.toThrow(TableNotAvailableError)
+        })
+
+        it('no es idempotente: ocupar de nuevo la propia mesa lanza TableNotAvailableError', async () => {
+            const table = await service.create({ restaurantId: 'r1', number: 1, capacity: 4 })
+            await service.occupy('r1', table.id, 'cliente-1')
+
+            await expect(service.occupy('r1', table.id, 'cliente-1')).rejects.toThrow(TableNotAvailableError)
+        })
+
+        it('lanza TableNotFoundError si no existe o es de otro restaurante', async () => {
+            const table = await service.create({ restaurantId: 'r2', number: 1, capacity: 4 })
+
+            await expect(service.occupy('r1', 'no-existe', 'cliente-1')).rejects.toThrow(TableNotFoundError)
+            await expect(service.occupy('r1', table.id, 'cliente-1')).rejects.toThrow(TableNotFoundError)
+            expect((await tableRepository.findById(table.id))?.status).toBe('libre')
         })
     })
 })
